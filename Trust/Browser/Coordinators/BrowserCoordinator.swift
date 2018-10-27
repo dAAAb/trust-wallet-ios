@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
@@ -13,7 +13,7 @@ protocol BrowserCoordinatorDelegate: class {
     func didSentTransaction(transaction: SentTransaction, in coordinator: BrowserCoordinator)
 }
 
-final class BrowserCoordinator: NSObject, Coordinator {
+class BrowserCoordinator: NSObject, Coordinator {
     var coordinators: [Coordinator] = []
     let session: WalletSession
     let keystore: Keystore
@@ -43,7 +43,7 @@ final class BrowserCoordinator: NSObject, Coordinator {
     }()
 
     lazy var browserViewController: BrowserViewController = {
-        let controller = BrowserViewController(account: session.account, config: session.config, server: server)
+        let controller = BrowserViewController(account: session.account, config: session.config)
         controller.delegate = self
         controller.webView.uiDelegate = self
         return controller
@@ -61,10 +61,6 @@ final class BrowserCoordinator: NSObject, Coordinator {
     var urlParser: BrowserURLParser {
         let engine = SearchEngine(rawValue: preferences.get(for: .browserSearchEngine)) ?? .default
         return BrowserURLParser(engine: engine)
-    }
-
-    var server: RPCServer {
-        return session.currentRPC
     }
 
     weak var delegate: BrowserCoordinatorDelegate?
@@ -96,21 +92,19 @@ final class BrowserCoordinator: NSObject, Coordinator {
         navigationController.dismiss(animated: true, completion: nil)
     }
 
-    private func executeTransaction(account: Account, action: DappAction, callbackID: Int, transaction: UnconfirmedTransaction, type: ConfirmType, server: RPCServer) {
+    private func executeTransaction(account: Account, action: DappAction, callbackID: Int, transaction: UnconfirmedTransaction, type: ConfirmType) {
         let configurator = TransactionConfigurator(
             session: session,
             account: account,
-            transaction: transaction,
-            server: server,
-            chainState: ChainState(server: server)
+            transaction: transaction
         )
         let coordinator = ConfirmCoordinator(
+            navigationController: NavigationController(),
             session: session,
             configurator: configurator,
             keystore: keystore,
             account: account,
-            type: type,
-            server: server
+            type: type
         )
         addCoordinator(coordinator)
         coordinator.didCompleted = { [unowned self] result in
@@ -210,14 +204,14 @@ final class BrowserCoordinator: NSObject, Coordinator {
         )
         alertController.popoverPresentationController?.sourceView = sender
         alertController.popoverPresentationController?.sourceRect = sender.centerRect
-        let reloadAction = UIAlertAction(title: R.string.localizable.reload(), style: .default) { [unowned self] _ in
+        let reloadAction = UIAlertAction(title: NSLocalizedString("browser.reload.button.title", value: "Reload", comment: ""), style: .default) { [unowned self] _ in
             self.rootViewController.browserViewController.reload()
         }
-        let shareAction = UIAlertAction(title: R.string.localizable.share(), style: .default) { [unowned self] _ in
+        let shareAction = UIAlertAction(title: NSLocalizedString("browser.share.button.title", value: "Share", comment: ""), style: .default) { [unowned self] _ in
             self.share()
         }
-        let cancelAction = UIAlertAction(title: R.string.localizable.cancel(), style: .cancel) { _ in }
-        let addBookmarkAction = UIAlertAction(title: R.string.localizable.browserAddbookmarkButtonTitle(), style: .default) { [unowned self] _ in
+        let cancelAction = UIAlertAction(title: NSLocalizedString("Cancel", value: "Cancel", comment: ""), style: .cancel) { _ in }
+        let addBookmarkAction = UIAlertAction(title: NSLocalizedString("browser.addbookmark.button.title", value: "Add Bookmark", comment: ""), style: .default) { [unowned self] _ in
             self.rootViewController.browserViewController.addBookmark()
         }
         alertController.addAction(reloadAction)
@@ -229,7 +223,7 @@ final class BrowserCoordinator: NSObject, Coordinator {
 
     private func share() {
         guard let url = rootViewController.browserViewController.webView.url else { return }
-        rootViewController.displayLoading()
+        navigationController.displayLoading()
         let params = BranchEvent.openURL(url).params
         Branch.getInstance().getShortURL(withParams: params) { [weak self] shortURLString, _ in
             guard let `self` = self else { return }
@@ -239,10 +233,17 @@ final class BrowserCoordinator: NSObject, Coordinator {
                 }
                 return url
             }()
-            self.rootViewController.showShareActivity(from: UIView(), with: [shareURL]) { [weak self] in
-                self?.rootViewController.hideLoading()
+            self.presentShareURL(for: shareURL) { [unowned self] in
+                self.navigationController.hideLoading()
             }
         }
+    }
+
+    private func presentShareURL(for url: URL, completion: (() -> Swift.Void)? = nil) {
+        let activityViewController = UIActivityViewController.make(items: [url])
+        activityViewController.popoverPresentationController?.sourceView = navigationController.view
+        activityViewController.popoverPresentationController?.sourceRect = navigationController.view.centerRect
+        navigationController.present(activityViewController, animated: true, completion: completion)
     }
 }
 
@@ -278,24 +279,25 @@ extension BrowserCoordinator: BrowserViewControllerDelegate {
     }
 
     func didCall(action: DappAction, callbackID: Int) {
-        guard let account = session.account.currentAccount, let _ = account.wallet else {
+        switch session.account.type {
+        case .privateKey(let account), .hd(let account) :
+            switch action {
+            case .signTransaction(let unconfirmedTransaction):
+                executeTransaction(account: account, action: action, callbackID: callbackID, transaction: unconfirmedTransaction, type: .signThenSend)
+            case .sendTransaction(let unconfirmedTransaction):
+                executeTransaction(account: account, action: action, callbackID: callbackID, transaction: unconfirmedTransaction, type: .signThenSend)
+            case .signMessage(let hexMessage):
+                signMessage(with: .message(Data(hex: hexMessage)), account: account, callbackID: callbackID)
+            case .signPersonalMessage(let hexMessage):
+                signMessage(with: .personalMessage(Data(hex: hexMessage)), account: account, callbackID: callbackID)
+            case .signTypedMessage(let typedData):
+                signMessage(with: .typedMessage(typedData), account: account, callbackID: callbackID)
+            case .unknown:
+                break
+            }
+        case .address:
             self.rootViewController.browserViewController.notifyFinish(callbackID: callbackID, value: .failure(DAppError.cancelled))
-            self.navigationController.topViewController?.displayError(error: InCoordinatorError.onlyWatchAccount)
-            return
-        }
-        switch action {
-        case .signTransaction(let unconfirmedTransaction):
-            executeTransaction(account: account, action: action, callbackID: callbackID, transaction: unconfirmedTransaction, type: .signThenSend, server: browserViewController.server)
-        case .sendTransaction(let unconfirmedTransaction):
-            executeTransaction(account: account, action: action, callbackID: callbackID, transaction: unconfirmedTransaction, type: .signThenSend, server: browserViewController.server)
-        case .signMessage(let hexMessage):
-            signMessage(with: .message(Data(hex: hexMessage)), account: account, callbackID: callbackID)
-        case .signPersonalMessage(let hexMessage):
-            signMessage(with: .personalMessage(Data(hex: hexMessage)), account: account, callbackID: callbackID)
-        case .signTypedMessage(let typedData):
-            signMessage(with: .typedMessage(typedData), account: account, callbackID: callbackID)
-        case .unknown:
-            break
+            self.navigationController.displayError(error: InCoordinatorError.onlyWatchAccount)
         }
     }
 
@@ -368,7 +370,7 @@ extension BrowserCoordinator: WKUIDelegate {
             style: .alert,
             in: navigationController
         )
-        alertController.addAction(UIAlertAction(title: R.string.localizable.oK(), style: .default, handler: { _ in
+        alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", value: "OK", comment: ""), style: .default, handler: { _ in
             completionHandler()
         }))
         navigationController.present(alertController, animated: true, completion: nil)
@@ -381,10 +383,10 @@ extension BrowserCoordinator: WKUIDelegate {
             style: .alert,
             in: navigationController
         )
-        alertController.addAction(UIAlertAction(title: R.string.localizable.oK(), style: .default, handler: { _ in
+        alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", value: "OK", comment: ""), style: .default, handler: { _ in
             completionHandler(true)
         }))
-        alertController.addAction(UIAlertAction(title: R.string.localizable.cancel(), style: .default, handler: { _ in
+        alertController.addAction(UIAlertAction(title: NSLocalizedString("Cancel", value: "Cancel", comment: ""), style: .default, handler: { _ in
             completionHandler(false)
         }))
         navigationController.present(alertController, animated: true, completion: nil)
@@ -400,14 +402,14 @@ extension BrowserCoordinator: WKUIDelegate {
         alertController.addTextField { (textField) in
             textField.text = defaultText
         }
-        alertController.addAction(UIAlertAction(title: R.string.localizable.oK(), style: .default, handler: { _ in
+        alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", value: "OK", comment: ""), style: .default, handler: { _ in
             if let text = alertController.textFields?.first?.text {
                 completionHandler(text)
             } else {
                 completionHandler(defaultText)
             }
         }))
-        alertController.addAction(UIAlertAction(title: R.string.localizable.cancel(), style: .default, handler: { _ in
+        alertController.addAction(UIAlertAction(title: NSLocalizedString("Cancel", value: "Cancel", comment: ""), style: .default, handler: { _ in
             completionHandler(nil)
         }))
         navigationController.present(alertController, animated: true, completion: nil)

@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import TrustCore
@@ -6,33 +6,39 @@ import UIKit
 
 struct RequestViewModel {
 
-    let coinTypeViewModel: CoinTypeViewModel
+    let account: Wallet
+    let config: Config
+    let token: TokenObject
 
     init(
-        coinTypeViewModel: CoinTypeViewModel
+        account: Wallet,
+        config: Config,
+        token: TokenObject
     ) {
-        self.coinTypeViewModel = coinTypeViewModel
+        self.account = account
+        self.config = config
+        self.token = token
     }
 
     var title: String {
-        return coinTypeViewModel.name
+        return token.displayName
     }
 
     var myAddressText: String {
-        return coinTypeViewModel.address.description
+        return account.address.description
     }
 
     var shareMyAddressText: String {
         return String(
             format: NSLocalizedString("request.myAddressIs.label.title", value: "My %@ address is: %@", comment: ""),
-            coinTypeViewModel.name, myAddressText
+            config.server.name, myAddressText
         )
     }
 
     var headlineText: String {
         return String(
             format: NSLocalizedString("request.myPublicaddress.label.title", value: "My Public %@ wallet address", comment: ""),
-            coinTypeViewModel.name
+            config.server.name
         )
     }
 

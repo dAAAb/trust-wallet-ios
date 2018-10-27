@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
@@ -6,7 +6,7 @@ protocol BrowserErrorViewDelegate: class {
     func didTapReload(_ sender: Button)
 }
 
-final class BrowserErrorView: UIView {
+class BrowserErrorView: UIView {
 
     weak var delegate: BrowserErrorViewDelegate?
 

@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Alamofire
 import Foundation
@@ -15,7 +15,15 @@ struct TrustProviderFactory {
 //        ),
     ]
 
-    static func makeProvider() -> MoyaProvider<TrustAPI> {
+    static func makeProvider() -> MoyaProvider<TrustService> {
+        let manager = Manager(
+            configuration: URLSessionConfiguration.default,
+            serverTrustPolicyManager: ServerTrustPolicyManager(policies: policies)
+        )
+        return MoyaProvider<TrustService>(manager: manager)
+    }
+
+    static func makeAPIProvider() -> MoyaProvider<TrustAPI> {
         let manager = Manager(
             configuration: URLSessionConfiguration.default,
             serverTrustPolicyManager: ServerTrustPolicyManager(policies: policies)

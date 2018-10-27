@@ -1,22 +1,16 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
-final class SectionHeader: UIView {
+class SectionHeader: UIView {
 
     private var fillColor: UIColor
     private var borderColor: UIColor
-    private var title: String?
+    private var title: String
     private var textColor: UIColor
     private var textFont: UIFont
 
-    init(
-        fillColor: UIColor = UIColor(hex: "fafafa"),
-        borderColor: UIColor = UIColor(hex: "e1e1e1"),
-        title: String?,
-        textColor: UIColor = UIColor(hex: "555357"),
-        textFont: UIFont = UIFont.systemFont(ofSize: 14, weight: UIFont.Weight.medium)
-    ) {
+    init(fillColor: UIColor, borderColor: UIColor, title: String, textColor: UIColor, textFont: UIFont) {
         self.fillColor = fillColor
         self.borderColor = borderColor
         self.title = title

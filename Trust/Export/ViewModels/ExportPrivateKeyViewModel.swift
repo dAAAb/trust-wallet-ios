@@ -1,24 +1,36 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import TrustKeystore
 
 struct ExportPrivateKeyViewModel {
 
-    let privateKey: Data
+    let keystore: Keystore
+    let account: Account
 
     init(
-        privateKey: Data
+        keystore: Keystore,
+        account: Account
     ) {
-        self.privateKey = privateKey
+        self.keystore = keystore
+        self.account = account
     }
 
     var headlineText: String {
         return NSLocalizedString("export.warning.private.key", value: "Export at your own risk!", comment: "")
     }
 
-    var privateKeyString: String {
-        return privateKey.hexString
+    var privateKey: String {
+        do {
+            let key = try keystore.exportPrivateKey(account: account).dematerialize()
+            return key.hexString
+        } catch {
+            return NSLocalizedString("export.noKPrivateKey.label.title", value: "No Private Key for wallet", comment: "")
+        }
+    }
+
+    var revealButtonTitle: String {
+        return NSLocalizedString("export.reveal.button.title", value: "Hold to Reveal", comment: "")
     }
 
     var warningText: String {

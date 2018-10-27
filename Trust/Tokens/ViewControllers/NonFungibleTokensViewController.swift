@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 import StatefulViewController
@@ -7,10 +7,9 @@ import PromiseKit
 
 protocol NonFungibleTokensViewControllerDelegate: class {
     func didPressDiscover()
-    func didPress(token: CollectibleTokenObject, with bacground: UIColor)
 }
 
-final class NonFungibleTokensViewController: UIViewController {
+class NonFungibleTokensViewController: UIViewController {
 
     private var viewModel: NonFungibleTokenViewModel
     let tableView: UITableView
@@ -39,19 +38,17 @@ final class NonFungibleTokensViewController: UIViewController {
         ])
         refreshControl.addTarget(self, action: #selector(pullToRefresh), for: .valueChanged)
         tableView.addSubview(refreshControl)
-        errorView = ErrorView(
-            onRetry: { [weak self] in
-                self?.fetch()
-            }
-        )
+        errorView = ErrorView(onRetry: { [weak self] in
+            self?.fetch()
+        })
         loadingView = LoadingView()
         emptyView = EmptyView(
             title: NSLocalizedString("emptyView.noNonTokens.label.title", value: "No Collectibles Found", comment: ""),
+            actionTitle: NSLocalizedString("collectibles.discover.label.title", value: "Explore on OpenSea.io", comment: ""),
             onRetry: { [weak self] in
-                self?.fetch()
-            }
-        )
-        title = viewModel.title
+                self?.delegate?.didPressDiscover()
+        })
+        fetch()
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -61,8 +58,6 @@ final class NonFungibleTokensViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.applyTintAdjustment()
-
-        fetch()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -76,7 +71,6 @@ final class NonFungibleTokensViewController: UIViewController {
     }
 
     func fetch() {
-        startLoading()
         firstly {
             viewModel.fetchAssets()
         }.done { [weak self] _ in
@@ -114,7 +108,6 @@ extension NonFungibleTokensViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: R.nib.nonFungibleTokenViewCell.name, for: indexPath) as! NonFungibleTokenViewCell
         cell.configure(viewModel: viewModel.cellViewModel(for: indexPath))
-        cell.delegate = delegate
         return cell
     }
 

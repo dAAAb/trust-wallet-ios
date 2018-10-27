@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import URLNavigator
@@ -16,15 +16,15 @@ extension InCoordinator: URLNavigable {
             return true
         }
 
-        navigator.handle("app://sign-transaction") { url, _, _ in
+        navigator.handle("trust://sign-transaction") { url, _, _ in
             return self.localSchemeCoordinator?.trustWalletSDK.handleOpen(url: url as! URL) ?? false
         }
 
-        navigator.handle("app://sign-message") { url, _, _ in
+        navigator.handle("trust://sign-message") { url, _, _ in
             return self.localSchemeCoordinator?.trustWalletSDK.handleOpen(url: url as! URL) ?? false
         }
 
-        navigator.handle("app://sign-personal-message") { url, _, _ in
+        navigator.handle("trust://sign-personal-message") { url, _, _ in
             return self.localSchemeCoordinator?.trustWalletSDK.handleOpen(url: url as! URL) ?? false
         }
     }

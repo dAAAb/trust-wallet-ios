@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
@@ -6,12 +6,11 @@ class LockPasscodeViewController: UIViewController {
     var willFinishWithResult: ((_ success: Bool) -> Void)?
     let model: LockViewModel
     var lockView: LockView!
-    let lock: Lock
+    let lock = Lock()
     private var invisiblePasscodeField = UITextField()
     private var shouldIgnoreTextFieldDelegateCalls = false
-    init(model: LockViewModel, lock: Lock = Lock()) {
+    init(model: LockViewModel) {
         self.model = model
-        self.lock = lock
         super.init(nibName: nil, bundle: nil)
     }
     override func viewDidLoad() {
@@ -30,7 +29,7 @@ class LockPasscodeViewController: UIViewController {
             invisiblePasscodeField.resignFirstResponder()
         }
     }
-    public func configureInvisiblePasscodeField() {
+    private func configureInvisiblePasscodeField() {
         invisiblePasscodeField = UITextField()
         invisiblePasscodeField.keyboardType = .numberPad
         invisiblePasscodeField.isSecureTextEntry = true
@@ -39,7 +38,7 @@ class LockPasscodeViewController: UIViewController {
         view.addSubview(invisiblePasscodeField)
     }
 
-    public func configureLockView() {
+    private func configureLockView() {
         lockView = LockView(model)
         lockView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(lockView)

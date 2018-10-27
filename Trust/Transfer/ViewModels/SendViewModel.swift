@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import TrustCore
@@ -9,6 +9,7 @@ import APIKit
 enum SendViewType {
     case address
     case amount
+    case collectible(NonFungibleTokenObject)
 }
 
 struct SendViewModel {
@@ -22,9 +23,9 @@ struct SendViewModel {
     }()
     /// decimals of a `SendViewModel` to represent amount of digits after coma.
     lazy var decimals: Int = {
-        switch self.transfer.type {
-        case .ether, .dapp:
-            return transfer.server.decimals
+        switch self.transferType {
+        case .ether, .dapp, .nft:
+            return config.server.decimals
         case .token(let token):
             return token.decimals
         }
@@ -40,7 +41,7 @@ struct SendViewModel {
         return chainState.gasPrice
     }
     /// transferType of a `SendViewModel` to know if it is token or ETH.
-    let transfer: Transfer
+    let transferType: TransferType
     /// config of a `SendViewModel` to know configuration of the current account.
     let config: Config
     let chainState: ChainState
@@ -48,13 +49,13 @@ struct SendViewModel {
     /// current wallet balance
     let balance: Balance?
     init(
-        transfer: Transfer,
+        transferType: TransferType,
         config: Config,
         chainState: ChainState,
         storage: TokensDataStore,
         balance: Balance?
     ) {
-        self.transfer = transfer
+        self.transferType = transferType
         self.config = config
         self.chainState = chainState
         self.storage = storage
@@ -64,16 +65,21 @@ struct SendViewModel {
         return "Send \(symbol)"
     }
     var symbol: String {
-        return transfer.type.token.symbol
+        return transferType.symbol(server: config.server)
+    }
+    var destinationAddress: Address {
+        return transferType.contract()
     }
     var backgroundColor: UIColor {
         return .white
     }
 
     var views: [SendViewType] {
-        switch transfer.type {
+        switch transferType {
         case .ether, .dapp, .token:
             return [.address, .amount]
+        case .nft(let token):
+            return [.address, .collectible(token)]
         }
     }
 
@@ -101,8 +107,8 @@ struct SendViewModel {
     /// - Returns: `String` that represent amount to send.
     mutating func sendMaxAmount() -> String {
         var max: Decimal? = 0
-        switch transfer.type {
-        case .ether, .dapp: max = EtherNumberFormatter.full.decimal(from: balance?.value ?? 0, decimals: decimals)
+        switch transferType {
+        case .ether, .dapp, .nft: max = EtherNumberFormatter.full.decimal(from: balance?.value ?? 0, decimals: decimals)
         case .token(let token): max = EtherNumberFormatter.full.decimal(from: token.valueBigInt, decimals: decimals)
         }
         guard let maxAmount = max else {
@@ -148,14 +154,14 @@ struct SendViewModel {
     }
     /// Get pair price with ticker
     func currentPairPrice() -> Decimal? {
-        guard let currentTokenInfo = storage.coinTicker(by: transfer.type.address), let price = Decimal(string: currentTokenInfo.price) else {
+        guard let currentTokenInfo = storage.tickers().first(where: { $0.contract == destinationAddress.description }), let price = Decimal(string: currentTokenInfo.price) else {
             return nil
         }
         return price
     }
     /// If ther is ticker for this pair show fiat view.
     func isFiatViewHidden() -> Bool {
-        guard let currentTokenInfo = storage.coinTicker(by: transfer.type.address), let price = Decimal(string: currentTokenInfo.price), price > 0 else {
+        guard let currentTokenInfo = storage.tickers().first(where: { $0.contract == destinationAddress.description }), let price = Decimal(string: currentTokenInfo.price), price > 0 else {
             return true
         }
         return false

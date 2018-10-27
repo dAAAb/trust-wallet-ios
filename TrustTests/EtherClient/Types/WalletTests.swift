@@ -1,32 +1,26 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import XCTest
 @testable import Trust
 import TrustCore
-import TrustKeystore
 
 class WalletTests: XCTestCase {
 
     func testPrivateKeyAddressDescription() {
-        let wallet: Wallet = .make()
-        let walletType = WalletType.privateKey(wallet)
+        let wallet = Trust.Wallet(type: .privateKey(.make()))
 
-        XCTAssertEqual("wallet-private-key-\(wallet.identifier)", walletType.description)
+        XCTAssertEqual("wallet-private-key-\(wallet.address.description)", wallet.description)
     }
 
     func testHDWalletAddressDescription() {
-        let wallet: Wallet = .make()
-        let walletType = WalletType.hd(wallet)
+        let wallet = Trust.Wallet(type: .hd(.make()))
 
-        XCTAssertEqual("wallet-hd-wallet-\(wallet.identifier)", walletType.description)
+        XCTAssertEqual("wallet-hd-wallet-\(wallet.address.description)", wallet.description)
     }
 
     func testWalletAddressDescription() {
-        let coin: Coin = .ethereum
-        let address: EthereumAddress = .make()
-        let walletType = WalletType.address(coin, address)
+        let wallet = Trust.Wallet(type: .address(.make()))
 
-        XCTAssertEqual("wallet-address-\(coin.rawValue)-\(address.description)", walletType.description)
+        XCTAssertEqual("wallet-address-\(wallet.address.description)", wallet.description)
     }
 }
-

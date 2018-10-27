@@ -1,19 +1,16 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import JSONRPCKit
 import APIKit
 import BigInt
 import Result
-import TrustCore
 
-final class GetNonceProvider: NonceProvider {
+class GetNonceProvider: NonceProvider {
     let storage: TransactionsStorage
-    let server: RPCServer
-    let address: Address
     var remoteNonce: BigInt? = .none
     var latestNonce: BigInt? {
-        guard let nonce = storage.latestTransaction(for: address, coin: server.coin)?.nonce else {
+        guard let nonce = storage.latestTransaction?.nonce else {
             return .none
         }
         let remoteNonceInt = remoteNonce ?? BigInt(-1)
@@ -32,13 +29,9 @@ final class GetNonceProvider: NonceProvider {
     }
 
     init(
-        storage: TransactionsStorage,
-        server: RPCServer,
-        address: Address
+        storage: TransactionsStorage
     ) {
         self.storage = storage
-        self.server = server
-        self.address = address
 
         fetchLatestNonce()
     }
@@ -55,12 +48,10 @@ final class GetNonceProvider: NonceProvider {
     }
 
     func fetchNextNonce(completion: @escaping (Result<BigInt, AnyError>) -> Void) {
-        fetch { [weak self] result in
-            guard let `self` = self else { return }
+        fetch { result in
             switch result {
             case .success(let nonce):
-                let res = self.nextNonce ?? nonce + 1
-                completion(.success(res))
+                completion(.success(nonce + 1))
             case .failure(let error):
                 completion(.failure(error))
             }
@@ -68,8 +59,8 @@ final class GetNonceProvider: NonceProvider {
     }
 
     func fetch(completion: @escaping (Result<BigInt, AnyError>) -> Void) {
-        let request = EtherServiceRequest(for: server, batch: BatchFactory().create(GetTransactionCountRequest(
-            address: address.description,
+        let request = EtherServiceRequest(batch: BatchFactory().create(GetTransactionCountRequest(
+            address: storage.account.address.description,
             state: "latest"
         )))
         Session.send(request) { [weak self] result in

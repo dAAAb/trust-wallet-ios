@@ -1,35 +1,34 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
-import TrustCore
 
 struct ImportWalletViewModel {
 
-    private let coin: CoinViewModel
+    private let config: Config
 
     init(
-        coin: Coin
+        config: Config = Config()
     ) {
-        self.coin = CoinViewModel(coin: coin)
+        self.config = config
     }
 
     var title: String {
-        return R.string.localizable.importWalletImportButtonTitle() + " " + coin.name
+        return NSLocalizedString("import.navigation.title", value: "Import Wallet", comment: "")
     }
 
     var keystorePlaceholder: String {
-        return R.string.localizable.keystoreJSON()
+        return NSLocalizedString("Keystore JSON", value: "Keystore JSON", comment: "")
     }
 
     var mnemonicPlaceholder: String {
-        return R.string.localizable.phrase()
+        return NSLocalizedString("import.wallet.mnemonic.placeholder", value: "Words separated by a space. (Usually contains 12 words)", comment: "")
     }
 
     var privateKeyPlaceholder: String {
-        return R.string.localizable.privateKey()
+        return NSLocalizedString("Private Key", value: "Private Key", comment: "")
     }
 
     var watchAddressPlaceholder: String {
-        return String(format: NSLocalizedString("import.wallet.watch.placeholder", value: "%@ Address", comment: ""), coin.name)
+        return String(format: NSLocalizedString("import.wallet.watch.placeholder", value: "%@ Address", comment: ""), config.server.name)
     }
 }

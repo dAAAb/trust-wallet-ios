@@ -1,21 +1,17 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import PromiseKit
+import Crashlytics
 
 struct NewTokenViewModel {
 
     private var tokensNetwork: NetworkProtocol
-    let token: ERC20Token?
-    private let session: WalletSession
 
-    init(
-        token: ERC20Token?,
-        session: WalletSession,
-        tokensNetwork: NetworkProtocol
-    ) {
+    let token: ERC20Token?
+
+    init(token: ERC20Token?, tokensNetwork: NetworkProtocol) {
         self.token = token
-        self.session = session
         self.tokensNetwork = tokensNetwork
     }
 
@@ -45,28 +41,10 @@ struct NewTokenViewModel {
         return "\(decimals)"
     }
 
-    var networkSelectorAvailable: Bool {
-        return networks.count > 1
-    }
-
-    var network: RPCServer {
-        guard let server = token?.coin.server else {
-            if networkSelectorAvailable {
-                return .main
-            }
-            return session.account.currentAccount.coin?.server ?? .main
-        }
-        return server
-    }
-
-    var networks: [RPCServer] {
-        return session.account.accounts.compactMap { $0.coin?.server }
-    }
-
     func info(for contract: String) -> Promise<TokenObject> {
         return Promise { seal in
             firstly {
-                tokensNetwork.search(query: contract).firstValue
+                tokensNetwork.search(token: contract)
             }.done { token in
                 seal.fulfill(token)
             }.catch { error in

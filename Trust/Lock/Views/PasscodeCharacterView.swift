@@ -1,8 +1,8 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
-final class PasscodeCharacterView: UIView {
+class PasscodeCharacterView: UIView {
     var isEmpty = true
     private var circle: CAShapeLayer?
     private var hyphen: CAShapeLayer?

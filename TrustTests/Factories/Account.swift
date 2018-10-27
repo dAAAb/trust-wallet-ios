@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 @testable import Trust
@@ -7,14 +7,11 @@ import TrustKeystore
 
 extension Account {
     static func make(
-        address: EthereumAddress = .make(),
-        derivationPath: DerivationPath = Coin.ethereum.derivationPath(at: 0)
+        address: Address = .make(),
+        type: AccountType = .encryptedKey,
+        url: URL = URL(fileURLWithPath: "")
     ) -> Account {
-        return Account(
-            wallet: .none,
-            address: address,
-            derivationPath: derivationPath
-        )
+        return Account(address: address, type: type, url: url)
     }
 }
 

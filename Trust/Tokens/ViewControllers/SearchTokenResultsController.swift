@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
@@ -13,7 +13,7 @@ protocol SearchTokenResultsControllerDelegate: class {
     func searchResultsController(didUpdate token: TokenObject, with action: TokenAction)
 }
 
-final class SearchTokenResultsController: UITableViewController {
+class SearchTokenResultsController: UITableViewController {
     weak var delegate: SearchTokenResultsControllerDelegate?
     var localResults: [TokenObject] {
         get {

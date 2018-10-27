@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import BigInt
 import Foundation
@@ -43,16 +43,13 @@ extension PendingTransaction {
 
 extension Transaction {
     static func from(
-        initialTransaction: Transaction,
-        transaction: PendingTransaction,
-        coin: Coin
+        transaction: PendingTransaction
     ) -> Transaction? {
         guard
-            let from = EthereumAddress(string: transaction.from) else {
+            let from = Address(string: transaction.from) else {
                 return .none
         }
-        //TODO; Probably make sense to update values on initialTransaction and not create a new one.
-        let to = EthereumAddress(string: transaction.to)?.description ?? transaction.to
+        let to = Address(string: transaction.to)?.description ?? transaction.to
         return Transaction(
             id: transaction.hash,
             blockNumber: Int(transaction.blockNumber) ?? 0,
@@ -64,8 +61,7 @@ extension Transaction {
             gasUsed: "",
             nonce: transaction.nonce,
             date: Date(),
-            coin: coin,
-            localizedOperations: Array(initialTransaction.localizedOperations),
+            localizedOperations: [],
             state: .pending
         )
     }

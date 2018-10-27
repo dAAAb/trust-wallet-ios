@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
@@ -6,10 +6,11 @@ import StackViewController
 import Kingfisher
 
 protocol NFTokenViewControllerDelegate: class {
+    func didPressToken(token: NonFungibleTokenObject, in viewController: NFTokenViewController)
     func didPressLink(url: URL, in viewController: NFTokenViewController)
 }
 
-final class NFTokenViewController: UIViewController {
+class NFTokenViewController: UIViewController {
 
     lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -34,8 +35,7 @@ final class NFTokenViewController: UIViewController {
         return sendButton
     }()
 
-    let token: CollectibleTokenObject
-    let server: RPCServer
+    let token: NonFungibleTokenObject
 
     lazy var imageView: UIImageView = {
         let imageView = UIImageView()
@@ -49,13 +49,12 @@ final class NFTokenViewController: UIViewController {
     }()
 
     lazy var viewModel: NFTDetailsViewModel = {
-        return NFTDetailsViewModel(token: token, server: server)
+        return NFTDetailsViewModel(token: token)
     }()
     weak var delegate: NFTokenViewControllerDelegate?
 
-    init(token: CollectibleTokenObject, server: RPCServer) {
+    init(token: NonFungibleTokenObject) {
         self.token = token
-        self.server = server
         super.init(nibName: nil, bundle: nil)
 
         self.view.addSubview(scrollView)
@@ -112,7 +111,7 @@ final class NFTokenViewController: UIViewController {
     }
 
     @objc func sendTap() {
-
+        delegate?.didPressToken(token: token, in: self)
     }
 
     @objc func internalTap() {

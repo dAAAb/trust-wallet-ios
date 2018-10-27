@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import BigInt
@@ -6,18 +6,18 @@ import BigInt
 struct GasViewModel {
     let fee: BigInt
     let server: RPCServer
-    let store: TokensDataStore
+    let currencyRate: CurrencyRate?
     let formatter: EtherNumberFormatter
 
     init(
         fee: BigInt,
         server: RPCServer,
-        store: TokensDataStore,
+        currencyRate: CurrencyRate? = nil,
         formatter: EtherNumberFormatter = .full
     ) {
         self.fee = fee
         self.server = server
-        self.store = store
+        self.currencyRate = currencyRate
         self.formatter = formatter
     }
 
@@ -27,15 +27,12 @@ struct GasViewModel {
     }
 
     var feeCurrency: Double? {
-        guard let price = store.coinTicker(by: server.priceID)?.price else {
-            return .none
-        }
-        return FeeCalculator.estimate(fee: formatter.string(from: fee), with: price)
+        return currencyRate?.estimate(fee: formatter.string(from: fee), with: server.address)
     }
 
     var monetaryFee: String? {
         guard let feeInCurrency = feeCurrency,
-            let fee = FeeCalculator.format(fee: feeInCurrency) else {
+            let fee = currencyRate?.format(fee: feeInCurrency) else {
             return .none
         }
         return fee

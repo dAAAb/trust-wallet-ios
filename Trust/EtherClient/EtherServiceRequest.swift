@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import APIKit
@@ -6,23 +6,19 @@ import JSONRPCKit
 
 struct EtherServiceRequest<Batch: JSONRPCKit.Batch>: APIKit.Request {
     let batch: Batch
-    let server: RPCServer
+
     typealias Response = Batch.Responses
 
     var timeoutInterval: Double
 
-    init(
-        for server: RPCServer,
-        batch: Batch,
-        timeoutInterval: Double = 30.0
-    ) {
-        self.server = server
+    init(batch: Batch, timeoutInterval: Double = 30.0) {
         self.batch = batch
         self.timeoutInterval = timeoutInterval
     }
 
     var baseURL: URL {
-        return server.rpcURL
+        let config = Config()
+        return config.server.rpcURL
     }
 
     var method: HTTPMethod {

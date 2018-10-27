@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import BigInt
@@ -6,43 +6,43 @@ import BigInt
 struct ConfirmPaymentDetailsViewModel {
 
     let transaction: PreviewTransaction
-    let session: WalletSession
+    let currentBalance: BalanceProtocol?
+    let currencyRate: CurrencyRate?
     let config: Config
-    let server: RPCServer
     private let fullFormatter = EtherNumberFormatter.full
     private let balanceFormatter = EtherNumberFormatter.balance
     private var monetaryAmountViewModel: MonetaryAmountViewModel {
         return MonetaryAmountViewModel(
             amount: amount,
-            contract: transaction.transfer.type.address,
-            session: session
+            address: transaction.transferType.contract(),
+            currencyRate: currencyRate
         )
     }
     init(
         transaction: PreviewTransaction,
         config: Config = Config(),
-        session: WalletSession,
-        server: RPCServer
+        currentBalance: BalanceProtocol?,
+        currencyRate: CurrencyRate?
     ) {
         self.transaction = transaction
+        self.currentBalance = currentBalance
         self.config = config
-        self.session = session
-        self.server = server
+        self.currencyRate = currencyRate
     }
 
     private var gasViewModel: GasViewModel {
-        return GasViewModel(fee: totalFee, server: server, store: session.tokensStorage, formatter: fullFormatter)
+        return GasViewModel(fee: totalFee, server: config.server, currencyRate: currencyRate, formatter: fullFormatter)
     }
 
     private var totalViewModel: GasViewModel {
 
         var value: BigInt = totalFee
 
-        if case TransferType.ether(_) = transaction.transfer.type {
+        if case TransferType.ether(_) = transaction.transferType {
             value += transaction.value
         }
 
-        return GasViewModel(fee: value, server: server, store: session.tokensStorage, formatter: fullFormatter)
+        return GasViewModel(fee: value, server: config.server, currencyRate: currencyRate, formatter: fullFormatter)
     }
 
     private var totalFee: BigInt {
@@ -53,30 +53,24 @@ struct ConfirmPaymentDetailsViewModel {
         return transaction.gasLimit
     }
 
-    var currentWalletDescriptionString: String {
-        let viewModel = WalletInfoViewModel(wallet: session.account)
-        let address = transaction.account.address.description
-        return viewModel.name + " " + ("(\(address.prefix(10))...\(address.suffix(8)))")
-    }
-
     var paymentFromTitle: String {
-        return R.string.localizable.transactionFromLabelTitle()
+        return NSLocalizedString("transaction.sender.label.title", value: "Sender", comment: "")
     }
 
     var requesterTitle: String {
-        switch transaction.transfer.type {
+        switch transaction.transferType {
         case .dapp:
             return NSLocalizedString("confirmPayment.dapp.label.title", value: "DApp", comment: "")
-        case .ether, .token:
+        case .ether, .token, .nft:
             return NSLocalizedString("confirmPayment.to.label.title", value: "To", comment: "")
         }
     }
 
     var requesterText: String {
-        switch transaction.transfer.type {
-        case .dapp(_, let request):
+        switch transaction.transferType {
+        case .dapp(let request):
             return request.url?.absoluteString ?? ""
-        case .ether, .token:
+        case .ether, .token, .nft:
             return transaction.address?.description ?? ""
         }
     }
@@ -94,7 +88,7 @@ struct ConfirmPaymentDetailsViewModel {
     }
 
     var estimatedFeeTitle: String {
-        return R.string.localizable.networkFee()
+        return NSLocalizedString("Network Fee", value: "Network Fee", comment: "")
     }
 
     var estimatedFeeText: String {
@@ -120,18 +114,19 @@ struct ConfirmPaymentDetailsViewModel {
         let feeDouble = gasViewModel.feeCurrency ?? 0
         let amountDouble = monetaryAmountViewModel.amountCurrency ?? 0
 
-        guard let totalAmount = FeeCalculator.format(fee: feeDouble + amountDouble) else {
+        let rate = CurrencyRate(rates: [])
+        guard let totalAmount = rate.format(fee: feeDouble + amountDouble) else {
             return "--"
         }
         return totalAmount
     }
 
     var amount: String {
-        switch transaction.transfer.type {
+        switch transaction.transferType {
         case .token(let token):
             return balanceFormatter.string(from: transaction.value, decimals: token.decimals)
-        case .ether(let token, _), .dapp(let token, _):
-            return balanceFormatter.string(from: transaction.value, decimals: token.decimals)
+        case .ether, .dapp, .nft:
+            return balanceFormatter.string(from: transaction.value)
         }
     }
 
@@ -145,7 +140,7 @@ struct ConfirmPaymentDetailsViewModel {
     }
 
     var amountString: String {
-        return amountWithSign(for: amount) + " \(transaction.transfer.type.symbol(server: server))"
+        return amountWithSign(for: amount) + " \(transaction.transferType.symbol(server: config.server))"
     }
 
     var monetaryAmountString: String? {

@@ -1,9 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 
-final class InfoHeaderView: UIView {
+class InfoHeaderView: UIView {
 
     let amountLabel = UILabel(frame: .zero)
     let logoImageView = UIImageView(frame: .zero)

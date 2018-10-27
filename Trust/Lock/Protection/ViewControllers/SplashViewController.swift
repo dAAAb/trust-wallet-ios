@@ -1,9 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 
-final class SplashViewController: UIViewController {
+class SplashViewController: UIViewController {
     private var splashView = SplashView()
     init() {
         super.init(nibName: nil, bundle: nil)

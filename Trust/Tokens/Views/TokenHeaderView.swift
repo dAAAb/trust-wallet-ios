@@ -1,8 +1,8 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
-final class TokenHeaderView: UIView {
+class TokenHeaderView: UIView {
 
     private struct Layout {
         static let imageSize: CGFloat = 70
@@ -12,18 +12,6 @@ final class TokenHeaderView: UIView {
         let label = UILabel(frame: .zero)
         label.textColor = Colors.black
         label.textAlignment = .right
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-
-    lazy var marketPriceLabel: UILabel = {
-        let label = UILabel(frame: .zero)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-
-    lazy var totalAmountLabel: UILabel = {
-        let label = UILabel(frame: .zero)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -42,8 +30,8 @@ final class TokenHeaderView: UIView {
         return imageView
     }()
 
-    lazy var buttonsView: ButtonsFooterView = {
-        let footerView = ButtonsFooterView(
+    lazy var buttonsView: TransactionsFooterView = {
+        let footerView = TransactionsFooterView(
             frame: .zero,
             bottomOffset: 5
         )
@@ -67,15 +55,11 @@ final class TokenHeaderView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        let amountStack = UIStackView(arrangedSubviews: [amountLabel, fiatAmountLabel])
+        let amountStack = UIStackView(arrangedSubviews: [amountLabel])
         amountStack.translatesAutoresizingMaskIntoConstraints = false
         amountStack.axis = .horizontal
 
-        let marketPriceStack = UIStackView(arrangedSubviews: [
-            marketPriceLabel,
-            .spacerWidth(5, backgroundColor: UIColor.clear, alpha: 0, priority: UILayoutPriority(rawValue: 999)),
-            percentChange,
-        ])
+        let marketPriceStack = UIStackView(arrangedSubviews: [fiatAmountLabel, .spacerWidth(5, backgroundColor: UIColor.clear, alpha: 0, priority: UILayoutPriority(rawValue: 999)), percentChange])
         marketPriceStack.translatesAutoresizingMaskIntoConstraints = false
         marketPriceStack.axis = .horizontal
         marketPriceStack.distribution = .equalSpacing
@@ -88,7 +72,7 @@ final class TokenHeaderView: UIView {
         container.addArrangedSubview(.spacer(height: StyleLayout.sideMargin * 2))
         container.addArrangedSubview(imageView)
         container.addArrangedSubview(.spacer(height: 12))
-        container.addArrangedSubview(amountStack)
+        container.addArrangedSubview(amountLabel)
         container.addArrangedSubview(.spacer(height: 12))
         container.addArrangedSubview(marketPriceStack)
         container.addArrangedSubview(.spacer(height: 12))

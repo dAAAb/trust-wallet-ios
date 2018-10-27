@@ -1,15 +1,19 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
-import TrustCore
 
 struct Config {
 
-    private struct Keys {
+    struct Keys {
+        static let chainID = "chainID"
+        static let isCryptoPrimaryCurrency = "isCryptoPrimaryCurrency"
+        static let isDebugEnabled = "isDebugEnabled"
         static let currencyID = "currencyID"
+        static let dAppBrowser = "dAppBrowser"
+        static let testNetworkWarningOff = "testNetworkWarningOff"
     }
 
-    static let dbMigrationSchemaVersion: UInt64 = 77
+    static let dbMigrationSchemaVersion: UInt64 = 54
 
     static let current: Config = Config()
 
@@ -40,13 +44,34 @@ struct Config {
         set { defaults.set(newValue.rawValue, forKey: Keys.currencyID) }
     }
 
-    var servers: [Coin] {
-        return [
-            Coin.ethereum,
-            Coin.ethereumClassic,
-            Coin.poa,
-            Coin.callisto,
-            Coin.gochain,
-        ]
+    var chainID: Int {
+        get {
+            let id = defaults.integer(forKey: Keys.chainID)
+            guard id > 0 else { return RPCServer.main.chainID }
+            return id
+        }
+        set { defaults.set(newValue, forKey: Keys.chainID) }
+    }
+
+    var isCryptoPrimaryCurrency: Bool {
+        get { return defaults.bool(forKey: Keys.isCryptoPrimaryCurrency) }
+        set { defaults.set(newValue, forKey: Keys.isCryptoPrimaryCurrency) }
+    }
+
+    var server: RPCServer {
+        return RPCServer(chainID: chainID)
+    }
+
+    var testNetworkWarningOff: Bool {
+        get { return defaults.bool(forKey: Keys.testNetworkWarningOff) }
+        set { defaults.set(newValue, forKey: Keys.testNetworkWarningOff) }
+    }
+
+    var openseaURL: URL? {
+        return URL(string: server.openseaPath)
+    }
+
+    func opensea(with contract: String, and id: String) -> URL? {
+        return URL(string: (server.openseaPath + "/assets/\(contract)/\(id)"))
     }
 }

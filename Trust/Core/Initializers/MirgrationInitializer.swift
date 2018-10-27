@@ -1,20 +1,22 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import RealmSwift
 import TrustCore
 
-final class MigrationInitializer: Initializer {
+class MigrationInitializer: Initializer {
 
-    let account: WalletInfo
+    let account: Wallet
+    let chainID: Int
     lazy var config: Realm.Configuration = {
-        return RealmConfiguration.configuration(for: account)
+        return RealmConfiguration.configuration(for: account, chainID: chainID)
     }()
 
     init(
-        account: WalletInfo
+        account: Wallet, chainID: Int
     ) {
         self.account = account
+        self.chainID = chainID
     }
 
     func perform() {
@@ -27,7 +29,7 @@ final class MigrationInitializer: Initializer {
                     guard let oldObject = oldObject else { return }
                     guard let newObject = newObject else { return }
                     guard let value = oldObject["contract"] as? String else { return }
-                    guard let address = EthereumAddress(string: value) else { return }
+                    guard let address = Address(string: value) else { return }
 
                     newObject["contract"] = address.description
                 }

@@ -1,14 +1,14 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 @testable import Trust
 
 extension ChainState {
     static func make(
-        server: RPCServer = .make()
+        config: Config = .make()
     ) -> ChainState {
         return ChainState(
-            server: .make()
+            config: config
         )
     }
 }

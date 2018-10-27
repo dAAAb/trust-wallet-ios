@@ -1,25 +1,25 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import JSONRPCKit
 import APIKit
 import BigInt
 
-final class ChainState {
+class ChainState {
 
     struct Keys {
         static let latestBlock = "chainID"
         static let gasPrice = "gasPrice"
     }
 
-    let server: RPCServer
+    let config: Config
 
     private var latestBlockKey: String {
-        return "\(server.chainID)-" + Keys.latestBlock
+        return "\(config.chainID)-" + Keys.latestBlock
     }
 
     private var gasPriceBlockKey: String {
-        return "\(server.chainID)-" + Keys.gasPrice
+        return "\(config.chainID)-" + Keys.gasPrice
     }
 
     var chainStateCompletion: ((Bool, Int) -> Void)?
@@ -45,15 +45,34 @@ final class ChainState {
     var updateLatestBlock: Timer?
 
     init(
-        server: RPCServer
+        config: Config = Config()
     ) {
-        self.server = server
-        self.defaults = Config.current.defaults
+        self.config = config
+        self.defaults = config.defaults
+        NotificationCenter.default.addObserver(self, selector: #selector(ChainState.stopTimers), name: .UIApplicationWillResignActive, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChainState.restartTimers), name: .UIApplicationDidBecomeActive, object: nil)
+        runScheduledTimers()
+    }
+    func start() {
         fetch()
     }
 
-    func start() {
-        fetch()
+    func stop() {
+        updateLatestBlock?.invalidate()
+        updateLatestBlock = nil
+    }
+    @objc func stopTimers() {
+        updateLatestBlock?.invalidate()
+        updateLatestBlock = nil
+    }
+    @objc func restartTimers() {
+        runScheduledTimers()
+    }
+    private func runScheduledTimers() {
+        guard updateLatestBlock == nil else {
+            return
+        }
+        self.updateLatestBlock = Timer.scheduledTimer(timeInterval: 6, target: self, selector: #selector(fetch), userInfo: nil, repeats: true)
     }
 
     @objc func fetch() {
@@ -62,7 +81,7 @@ final class ChainState {
     }
 
     private func getLastBlock() {
-        let request = EtherServiceRequest(for: server, batch: BatchFactory().create(BlockNumberRequest()), timeoutInterval: 5.0)
+        let request = EtherServiceRequest(batch: BatchFactory().create(BlockNumberRequest()), timeoutInterval: 5.0)
         Session.send(request) { [weak self] result in
             guard let `self` = self else { return }
             switch result {
@@ -76,7 +95,7 @@ final class ChainState {
     }
 
     private func getGasPrice() {
-        let request = EtherServiceRequest(for: server, batch: BatchFactory().create(GasPriceRequest()))
+        let request = EtherServiceRequest(batch: BatchFactory().create(GasPriceRequest()))
         Session.send(request) { [weak self] result in
             switch result {
             case .success(let balance):
@@ -91,5 +110,10 @@ final class ChainState {
         let block = latestBlock - fromBlock
         guard latestBlock != 0, block >= 0 else { return nil }
         return max(1, block)
+    }
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+        updateLatestBlock?.invalidate()
+        updateLatestBlock = nil
     }
 }

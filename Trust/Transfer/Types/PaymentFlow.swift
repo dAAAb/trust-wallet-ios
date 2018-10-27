@@ -1,8 +1,8 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 
 enum PaymentFlow {
-    case send(type: Transfer)
-    case request(TokenObject)
+    case send(type: TransferType)
+    case request(token: TokenObject)
 }

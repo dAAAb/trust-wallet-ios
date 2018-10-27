@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 
@@ -21,7 +21,7 @@ struct SkipBackupFilesInitializer: Initializer {
             try url.setResourceValue(true, forKey: .isExcludedFromBackupKey)
             try url.setResourceValue(false, forKey: .isUbiquitousItemKey)
             return true
-        } catch {
+        } catch let error {
             return false
         }
     }

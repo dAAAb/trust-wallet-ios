@@ -1,11 +1,11 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import BigInt
 
 enum ConfigureTransactionError: LocalizedError {
     case gasLimitTooHigh
-    case gasFeeTooHigh(RPCServer)
+    case gasFeeTooHigh
 
     var errorDescription: String? {
         switch self {
@@ -18,7 +18,7 @@ enum ConfigureTransactionError: LocalizedError {
                 ),
                 ConfigureTransaction.gasLimitMax
             )
-        case .gasFeeTooHigh(let server):
+        case .gasFeeTooHigh:
             return String(
                 format: NSLocalizedString(
                     "configureTransaction.error.gasFeeHigh",
@@ -26,7 +26,7 @@ enum ConfigureTransactionError: LocalizedError {
                     comment: ""
                 ),
                 EtherNumberFormatter.full.string(from: ConfigureTransaction.gasFeeMax),
-                server.symbol
+                Config().server.symbol
             )
         }
     }

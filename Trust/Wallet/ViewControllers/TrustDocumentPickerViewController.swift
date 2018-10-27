@@ -1,8 +1,8 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
-final class TrustDocumentPickerViewController: UIDocumentPickerViewController {
+class TrustDocumentPickerViewController: UIDocumentPickerViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)

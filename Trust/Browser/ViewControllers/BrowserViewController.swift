@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
@@ -21,10 +21,10 @@ protocol BrowserViewControllerDelegate: class {
     func didVisitURL(url: URL, title: String)
 }
 
-final class BrowserViewController: UIViewController {
+class BrowserViewController: UIViewController {
 
     private var myContext = 0
-    let account: WalletInfo
+    let account: Wallet
     let sessionConfig: Config
 
     private struct Keys {
@@ -75,22 +75,17 @@ final class BrowserViewController: UIViewController {
 
     //Take a look at this issue : https://stackoverflow.com/questions/26383031/wkwebview-causes-my-view-controller-to-leak
     lazy var config: WKWebViewConfiguration = {
-        //TODO
-        let config = WKWebViewConfiguration.make(for: server, address: account.address, with: sessionConfig, in: ScriptMessageProxy(delegate: self))
+        let config = WKWebViewConfiguration.make(for: account, with: sessionConfig, in: ScriptMessageProxy(delegate: self))
         config.websiteDataStore = WKWebsiteDataStore.default()
         return config
     }()
 
-    let server: RPCServer
-
     init(
-        account: WalletInfo,
-        config: Config,
-        server: RPCServer
+        account: Wallet,
+        config: Config
     ) {
         self.account = account
         self.sessionConfig = config
-        self.server = server
 
         super.init(nibName: nil, bundle: nil)
 
@@ -289,10 +284,7 @@ extension BrowserViewController: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let command = DappAction.fromMessage(message) else { return }
         let requester = DAppRequester(title: webView.title, url: webView.url)
-        //TODO: Refactor
-        let token = TokensDataStore.token(for: server)
-        let transfer = Transfer(server: server, type: .dapp(token, requester))
-        let action = DappAction.fromCommand(command, transfer: transfer)
+        let action = DappAction.fromCommand(command, requester: requester)
 
         delegate?.didCall(action: action, callbackID: command.id)
     }

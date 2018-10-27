@@ -1,14 +1,14 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 @testable import Trust
 import TrustCore
 
-extension EthereumAddress {
+extension Address {
     static func make(
-        address: String = "0x0000000000000000000000000000000000000001"
-    ) -> EthereumAddress {
-        return EthereumAddress(
+        address: String = "0x1000000000000000000000000000000000000000"
+    ) -> Address {
+        return Address(
             string: address
         )!
     }

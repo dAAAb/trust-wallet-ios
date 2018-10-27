@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
@@ -7,7 +7,7 @@ protocol WelcomeViewControllerDelegate: class {
     func didPressImportWallet(in viewController: WelcomeViewController)
 }
 
-final class WelcomeViewController: UIViewController {
+class WelcomeViewController: UIViewController {
 
     var viewModel = WelcomeViewModel()
     weak var delegate: WelcomeViewControllerDelegate?

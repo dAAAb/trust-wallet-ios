@@ -1,8 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
+import RandomColorSwift
 
-final class NonFungibleCollectionViewCell: UICollectionViewCell {
+class NonFungibleCollectionViewCell: UICollectionViewCell {
 
     @IBOutlet private weak var title: UILabel!
     @IBOutlet private weak var subTitle: UILabel!
@@ -16,7 +17,7 @@ final class NonFungibleCollectionViewCell: UICollectionViewCell {
         self.layer.shadowRadius = 2
         self.layer.shadowOpacity = 0.4
         self.layer.masksToBounds = false
-        imageViewBackground.backgroundColor = .randomPastelColor()
+        imageViewBackground.backgroundColor = randomColor(hue: .random, luminosity: .light).withAlphaComponent(0.3)
     }
 
     func configure(with viewModel: NonFungibleCollectionViewCellModel) {

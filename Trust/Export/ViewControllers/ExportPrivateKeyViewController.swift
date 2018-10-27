@@ -1,11 +1,11 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import TrustCore
 import UIKit
 import MBProgressHUD
 
-final class ExportPrivateKeyViewConroller: UIViewController {
+class ExportPrivateKeyViewConroller: UIViewController {
 
     private struct Layout {
         static var widthAndHeight: CGFloat = 260
@@ -14,7 +14,17 @@ final class ExportPrivateKeyViewConroller: UIViewController {
     lazy var imageView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
+        blur(image: imageView)
         return imageView
+    }()
+
+    lazy var revalQRCodeButton: UIButton = {
+        let button = Button(size: .normal, style: .border)
+        let longGesture = UILongPressGestureRecognizer(target: self, action: #selector(unBlur))
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle(viewModel.revealButtonTitle, for: .normal)
+        button.addGestureRecognizer(longGesture)
+        return button
     }()
 
     lazy var hintLabel: UILabel = {
@@ -23,7 +33,6 @@ final class ExportPrivateKeyViewConroller: UIViewController {
         label.adjustsFontSizeToFitWidth = true
         label.text = viewModel.headlineText
         label.textColor = Colors.red
-        label.adjustsFontSizeToFitWidth = true
         return label
     }()
 
@@ -34,17 +43,14 @@ final class ExportPrivateKeyViewConroller: UIViewController {
         label.textColor = Colors.red
         label.textAlignment = .center
         label.numberOfLines = 0
-        label.adjustsFontSizeToFitWidth = true
         return label
     }()
 
-    lazy var copyButton: UIButton = {
-        let button = Button(size: .extraLarge, style: .clear)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(copyAction(_:)), for: .touchUpInside)
-        button.setTitle(NSLocalizedString("Copy", value: "Copy", comment: ""), for: .normal)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+    lazy var hud: MBProgressHUD = {
+        let hud = MBProgressHUD.showAdded(to: imageView, animated: true)
+        hud.mode = .text
+        hud.label.text = NSLocalizedString("export.qrCode.loading.label", value: "Generating QR Code", comment: "")
+        return hud
     }()
 
     let viewModel: ExportPrivateKeyViewModel
@@ -52,6 +58,7 @@ final class ExportPrivateKeyViewConroller: UIViewController {
     init(
         viewModel: ExportPrivateKeyViewModel
     ) {
+
         self.viewModel = viewModel
 
         super.init(nibName: nil, bundle: nil)
@@ -63,7 +70,7 @@ final class ExportPrivateKeyViewConroller: UIViewController {
             hintLabel,
             imageView,
             warningKeyLabel,
-            copyButton,
+            revalQRCodeButton,
         ])
         stackView.axis = .vertical
         stackView.spacing = 20
@@ -80,27 +87,46 @@ final class ExportPrivateKeyViewConroller: UIViewController {
             stackView.trailingAnchor.constraint(equalTo: view.layoutGuide.trailingAnchor, constant: -StyleLayout.sideMargin),
             stackView.bottomAnchor.constraint(lessThanOrEqualTo: view.layoutGuide.bottomAnchor, constant: -StyleLayout.sideMargin),
 
-            imageView.heightAnchor.constraint(equalToConstant: Layout.widthAndHeight),
-            imageView.widthAnchor.constraint(equalToConstant: Layout.widthAndHeight),
-        ])
+            revalQRCodeButton.trailingAnchor.constraint(equalTo: stackView.layoutMarginsGuide.trailingAnchor),
+            revalQRCodeButton.leadingAnchor.constraint(equalTo: stackView.layoutMarginsGuide.leadingAnchor),
 
-        createQRCode()
+            imageView.heightAnchor.constraint(equalToConstant: Layout.widthAndHeight),
+            imageView.trailingAnchor.constraint(lessThanOrEqualTo: stackView.layoutMarginsGuide.trailingAnchor, constant: StyleLayout.sideMargin * 2.5),
+            imageView.leadingAnchor.constraint(lessThanOrEqualTo: stackView.layoutMarginsGuide.leadingAnchor, constant: StyleLayout.sideMargin * 2.5),
+
+        ])
     }
 
-    func createQRCode() {
-        displayLoading()
-        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
-            guard let `self` = self else { return }
-            let image = QRGenerator.generate(from: self.viewModel.privateKeyString)
-            DispatchQueue.main.async {
-                self.imageView.image = image
-                self.hideLoading()
-            }
+    func blur(image: UIImageView) {
+        let blur = UIBlurEffect(style: .dark)
+        let view = UIVisualEffectView(effect: blur)
+
+        view.frame = image.bounds
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.alpha = CGFloat(0.95)
+
+        image.addSubview(view)
+    }
+
+    @objc func unBlur() {
+        createQRCode()
+        for view in imageView.subviews {
+            guard let view = view as? UIVisualEffectView else { return }
+            view.removeFromSuperview()
         }
     }
 
-    @objc private func copyAction(_ sender: UIButton) {
-        showShareActivity(from: sender, with: [viewModel.privateKeyString])
+    func createQRCode() {
+        hud.show(animated: true)
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            guard let `self` = self else { return }
+            let string = self.viewModel.privateKey
+            let image = QRGenerator.generate(from: string)
+            DispatchQueue.main.async {
+                self.imageView.image = image
+                self.hud.hide(animated: true)
+            }
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {

@@ -1,12 +1,12 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
 struct NonFungibleCollectionViewCellModel {
 
-    let token: CollectibleTokenObject
+    let token: NonFungibleTokenObject
 
-    init(token: CollectibleTokenObject) {
+    init(token: NonFungibleTokenObject) {
         self.token = token
     }
 

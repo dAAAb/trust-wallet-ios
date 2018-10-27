@@ -1,36 +1,45 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import TrustCore
-import BigInt
 
-final class TokenBalanceOperation: TrustOperation {
-    private var balanceProvider: BalanceNetworkProvider
+class TokenBalanceOperation: TrustOperation {
+    private var network: NetworkProtocol
+    private let address: Address
     private let store: TokensDataStore
 
     init(
-        balanceProvider: BalanceNetworkProvider,
+        network: NetworkProtocol,
+        address: Address,
         store: TokensDataStore
-    ) {
-        self.balanceProvider = balanceProvider
+        ) {
+        self.network = network
+        self.address = address
         self.store = store
     }
 
     override func main() {
+        guard isCancelled == false else {
+            finish(true)
+            return
+        }
         updateBalance()
     }
 
     private func updateBalance() {
-        balanceProvider.balance().done { [weak self] balance in
-            guard let strongSelf = self else {
-                self?.finish()
+        executing(true)
+        network.tokenBalance(for: address) { [weak self] result in
+            guard let strongSelf = self, let balance = result else {
+                self?.executing(false)
+                self?.finish(true)
                 return
             }
             strongSelf.updateModel(with: balance)
-        }.catch { _ in }
+        }
     }
 
-    private func updateModel(with balance: BigInt) {
-        self.store.update(balance: balance, for: balanceProvider.addressUpdate)
-        self.finish()
+    private func updateModel(with balance: Balance) {
+        self.store.update(balance: balance.value, for: self.address)
+        self.executing(false)
+        self.finish(true)
     }
 }

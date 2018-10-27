@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
@@ -7,26 +7,24 @@ import BigInt
 struct TokenViewCellViewModel {
 
     private let shortFormatter = EtherNumberFormatter.short
-    let viewModel: TokenObjectViewModel
-    private let ticker: CoinTicker?
-    let store: TransactionsStorage
+
+    let token: TokenObject
+    let ticker: CoinTicker?
 
     init(
-        viewModel: TokenObjectViewModel,
-        ticker: CoinTicker?,
-        store: TransactionsStorage
+        token: TokenObject,
+        ticker: CoinTicker?
     ) {
-        self.viewModel = viewModel
+        self.token = token
         self.ticker = ticker
-        self.store = store
     }
 
     var title: String {
-        return viewModel.title
+        return token.title
     }
 
     var titleFont: UIFont {
-        return UIFont.systemFont(ofSize: 17, weight: .medium)
+        return UIFont.systemFont(ofSize: 16, weight: .medium)
     }
 
     var titleTextColor: UIColor {
@@ -34,11 +32,11 @@ struct TokenViewCellViewModel {
     }
 
     var amount: String {
-        return shortFormatter.string(from: BigInt(viewModel.token.value) ?? BigInt(), decimals: viewModel.token.decimals)
+        return shortFormatter.string(from: BigInt(token.value) ?? BigInt(), decimals: token.decimals)
     }
 
     var currencyAmount: String? {
-        return TokensLayout.cell.totalFiatAmount(token: viewModel.token)
+        return TokensLayout.cell.totalFiatAmount(for: ticker, token: token)
     }
 
     var amountFont: UIFont {
@@ -46,7 +44,7 @@ struct TokenViewCellViewModel {
     }
 
     var currencyAmountFont: UIFont {
-        return UIFont.systemFont(ofSize: 13, weight: .regular)
+        return UIFont.systemFont(ofSize: 12, weight: .regular)
     }
 
     var backgroundColor: UIColor {
@@ -61,9 +59,10 @@ struct TokenViewCellViewModel {
         return Colors.lightGray
     }
 
-    // Percent change
-
     var percentChange: String? {
+        guard let _ = currencyAmount else {
+            return .none
+        }
         return TokensLayout.cell.percentChange(for: ticker)
     }
 
@@ -76,24 +75,10 @@ struct TokenViewCellViewModel {
     }
 
     var placeholderImage: UIImage? {
-        return viewModel.placeholder
+        return R.image.ethereum_logo_256()
     }
 
-    // Market Price
-
-    var marketPriceFont: UIFont {
-        return UIFont.systemFont(ofSize: 12, weight: .regular)
-    }
-
-    var marketPriceTextColor: UIColor {
-        return Colors.lightGray
-    }
-
-    var marketPrice: String? {
-        return TokensLayout.cell.marketPrice(for: ticker)
-    }
-
-    var imageURL: URL? {
-        return viewModel.imageURL
+    var imageUrl: URL? {
+        return URL(string: token.imagePath)
     }
 }

@@ -1,25 +1,23 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 import RealmSwift
 import TrustCore
 import PromiseKit
-import TrustKeystore
 
 protocol TokensViewModelDelegate: class {
     func refresh()
 }
 
-final class TokensViewModel: NSObject {
+class TokensViewModel: NSObject {
     let config: Config
 
     let store: TokensDataStore
     var tokensNetwork: NetworkProtocol
     let tokens: Results<TokenObject>
     var tokensObserver: NotificationToken?
-    let transactionStore: TransactionsStorage
-    let session: WalletSession
+    let address: Address
 
     var headerBalance: String {
         return amount ?? "0.00"
@@ -45,6 +43,10 @@ final class TokensViewModel: NSObject {
         return .white
     }
 
+    var hasContent: Bool {
+        return !tokens.isEmpty
+    }
+
     var footerTitle: String {
         return NSLocalizedString("tokens.footer.label.title", value: "Tokens will appear automagically. Tap + to add manually.", comment: "")
     }
@@ -57,27 +59,19 @@ final class TokensViewModel: NSObject {
         return UIFont.systemFont(ofSize: 13, weight: .light)
     }
 
-    var all: [TokenViewModel] {
-        return Array(tokens).map { token in
-            return TokenViewModel(token: token, config: config, store: store, transactionsStore: transactionStore, tokensNetwork: tokensNetwork, session: session)
-        }
-    }
-
     weak var delegate: TokensViewModelDelegate?
 
     init(
-        session: WalletSession,
         config: Config = Config(),
+        address: Address,
         store: TokensDataStore,
-        tokensNetwork: NetworkProtocol,
-        transactionStore: TransactionsStorage
+        tokensNetwork: NetworkProtocol
     ) {
-        self.session = session
         self.config = config
+        self.address = address
         self.store = store
         self.tokensNetwork = tokensNetwork
         self.tokens = store.tokens
-        self.transactionStore = transactionStore
         super.init()
     }
 
@@ -86,8 +80,19 @@ final class TokensViewModel: NSObject {
     }
 
     private var amount: String? {
-        let totalAmount = tokens.lazy.map { $0.balance }.reduce(0.0, +)
+        let totalAmount = tokens.lazy.flatMap { [weak self] in
+            self?.amount(for: $0)
+        }.reduce(0, +)
         return CurrencyFormatter.formatter.string(from: NSNumber(value: totalAmount))
+    }
+
+    private func amount(for token: TokenObject) -> Double {
+        guard let coinTicker = store.coinTicker(for: token) else {
+            return 0
+        }
+        let tokenValue = CurrencyFormatter.plainFormatter.string(from: token.valueBigInt, decimals: token.decimals).doubleValue
+        let price = Double(coinTicker.price) ?? 0
+        return tokenValue * price
     }
 
     func numberOfItems(for section: Int) -> Int {
@@ -102,30 +107,38 @@ final class TokensViewModel: NSObject {
         return tokens[path.row].isCustom
     }
 
-    func cellViewModel(for path: IndexPath) -> TokenViewCellViewModel {
-        let token = tokens[path.row]
-        return TokenViewCellViewModel(
-            viewModel: TokenObjectViewModel(token: token),
-            ticker: store.coinTicker(by: token.address),
-            store: transactionStore
-        )
+    func canDisable(for path: IndexPath) -> Bool {
+        return item(for: path) != TokensDataStore.etherToken()
     }
 
-    func updateBalances() {
-        balances(for: Array(store.tokensBalance))
+    func cellViewModel(for path: IndexPath) -> TokenViewCellViewModel {
+        let token = tokens[path.row]
+        return TokenViewCellViewModel(token: token, ticker: store.coinTicker(for: token))
+    }
+
+    func updateEthBalance() {
+        firstly {
+            tokensNetwork.ethBalance()
+        }.done { [weak self] balance in
+            self?.store.update(balances: [TokensDataStore.etherToken().address: balance.value])
+        }.catch { error in
+           NSLog("updateEthBalance \(error)")
+        }
     }
 
     private func tokensInfo() {
         firstly {
-            tokensNetwork.tokensList()
+            tokensNetwork.tokensList(for: address)
         }.done { [weak self] tokens in
              self?.store.update(tokens: tokens, action: .updateInfo)
         }.catch { error in
             NSLog("tokensInfo \(error)")
         }.finally { [weak self] in
             guard let strongSelf = self else { return }
-            let tokens = Array(strongSelf.store.tokensBalance)
+            let tokens = strongSelf.store.objects
+            let enabledTokens = strongSelf.store.enabledObject
             strongSelf.prices(for: tokens)
+            strongSelf.balances(for: enabledTokens)
         }
     }
 
@@ -134,43 +147,25 @@ final class TokensViewModel: NSObject {
         firstly {
             tokensNetwork.tickers(with: prices)
         }.done { [weak self] tickers in
-            guard let strongSelf = self else { return }
-            strongSelf.store.saveTickers(tickers: tickers)
+            self?.store.saveTickers(tickers: tickers)
         }.catch { error in
             NSLog("prices \(error)")
         }.finally { [weak self] in
-            guard let strongSelf = self else { return }
-            strongSelf.balances(for: tokens)
+            self?.delegate?.refresh()
         }
     }
 
     private func balances(for tokens: [TokenObject]) {
-        let balances: [BalanceNetworkProvider] = tokens.compactMap {
-            return TokenViewModel.balance(for: $0, wallet: session.account)
-        }
+
         let operationQueue: OperationQueue = OperationQueue()
         operationQueue.qualityOfService = .background
 
-        let balancesOperations = Array(balances.lazy.map {
-            TokenBalanceOperation(balanceProvider: $0, store: self.store)
-        })
-
-        operationQueue.operations.onFinish { [weak self] in
-            DispatchQueue.main.async {
-                self?.delegate?.refresh()
-            }
-        }
-
+        let balancesOperations = Array(tokens.lazy.map { TokenBalanceOperation(network: self.tokensNetwork, address: $0.address, store: self.store) })
         operationQueue.addOperations(balancesOperations, waitUntilFinished: false)
-    }
-
-    func updatePendingTransactions() {
-        all.forEach { $0.updatePending() }
     }
 
     func fetch() {
         tokensInfo()
-        updatePendingTransactions()
     }
 
     func invalidateTokensObservation() {

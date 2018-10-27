@@ -1,9 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import WebKit
 
-final class ScriptMessageProxy: NSObject, WKScriptMessageHandler {
+class ScriptMessageProxy: NSObject, WKScriptMessageHandler {
 
     weak var delegate: WKScriptMessageHandler?
 

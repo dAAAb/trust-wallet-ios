@@ -1,9 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 
-final class BookmarkViewCell: UITableViewCell {
+class BookmarkViewCell: UITableViewCell {
 
     @IBOutlet weak var bookmarkTitleLabel: UILabel!
     @IBOutlet weak var urlLabel: UILabel!

@@ -1,9 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 import Foundation
 import UIKit
 import StoreKit
 
-final class HelpUsCoordinator: Coordinator {
+class HelpUsCoordinator: Coordinator {
 
     let navigationController: NavigationController
     let appTracker: AppTracker
@@ -53,8 +53,11 @@ final class HelpUsCoordinator: Coordinator {
         navigationController.dismiss(animated: true, completion: nil)
     }
 
-    func presentSharing(in controller: UIViewController, from sender: UIView) {
-        controller.showShareActivity(from: sender, with: viewModel.activityItems)
+    func presentSharing(in viewController: UIViewController, from sender: UIView) {
+        let activityViewController = UIActivityViewController.make(items: viewModel.activityItems)
+        activityViewController.popoverPresentationController?.sourceView = sender
+        activityViewController.popoverPresentationController?.sourceRect = sender.centerRect
+        viewController.present(activityViewController, animated: true, completion: nil)
     }
 }
 

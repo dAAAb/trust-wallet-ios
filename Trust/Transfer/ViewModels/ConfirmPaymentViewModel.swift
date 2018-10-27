@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
@@ -7,9 +7,7 @@ struct ConfirmPaymentViewModel {
 
     let type: ConfirmType
 
-    init(
-        type: ConfirmType
-    ) {
+    init(type: ConfirmType) {
         self.type = type
     }
 
@@ -20,9 +18,9 @@ struct ConfirmPaymentViewModel {
     var actionButtonText: String {
         switch type {
         case .sign:
-            return R.string.localizable.approve()
+            return NSLocalizedString("Approve", value: "Approve", comment: "")
         case .signThenSend:
-            return R.string.localizable.send()
+            return NSLocalizedString("Send", value: "Send", comment: "")
         }
     }
 
@@ -30,16 +28,16 @@ struct ConfirmPaymentViewModel {
         return .white
     }
 
-    func getActionButtonText(_ status: BalanceStatus, config: Config, transfer: Transfer) -> String {
+    func getActionButtonText(_ status: BalanceStatus, config: Config, transferType: TransferType) -> String {
         if status.sufficient {
             return actionButtonText
         }
 
         let format = status.insufficientText
-        let networkSymbol = transfer.server.symbol
+        let networkSymbol = config.server.symbol
 
-        switch transfer.type {
-        case .ether, .dapp:
+        switch transferType {
+        case .ether, .dapp, .nft:
             return String(format: format, networkSymbol)
         case .token(let token):
             switch status {

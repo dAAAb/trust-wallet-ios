@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 import Eureka
@@ -9,7 +9,7 @@ protocol SettingsViewControllerDelegate: class {
     func didAction(action: SettingsAction, in viewController: SettingsViewController)
 }
 
-final class SettingsViewController: FormViewController, Coordinator {
+class SettingsViewController: FormViewController, Coordinator {
     var coordinators: [Coordinator] = []
 
     struct Values {
@@ -30,6 +30,12 @@ final class SettingsViewController: FormViewController, Coordinator {
 
     lazy var viewModel: SettingsViewModel = {
         return SettingsViewModel(isDebug: isDebug)
+    }()
+
+    lazy var networkStateView: NetworkStateView? = {
+        let view = NetworkStateView(frame: .zero)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
 
     lazy var autoLockRow: PushRow<AutoLock> = {
@@ -59,25 +65,42 @@ final class SettingsViewController: FormViewController, Coordinator {
     }()
 
     let session: WalletSession
+
     let keystore: Keystore
+
+    let balanceCoordinator: TokensBalanceService
+
+    weak var accountsCoordinator: AccountsCoordinator?
 
     init(
         session: WalletSession,
-        keystore: Keystore
+        keystore: Keystore,
+        balanceCoordinator: TokensBalanceService,
+        accountsCoordinator: AccountsCoordinator
     ) {
         self.session = session
         self.keystore = keystore
+        self.balanceCoordinator = balanceCoordinator
+        self.accountsCoordinator = accountsCoordinator
         super.init(nibName: nil, bundle: nil)
+        self.chaineStateObservation()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = R.string.localizable.settingsNavigationTitle()
+        if let stateView = networkStateView {
+            self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: stateView)
+        }
+        title = NSLocalizedString("settings.navigation.title", value: "Settings", comment: "")
+        let account = session.account
+
         form = Section()
 
-            <<< walletsRow(for: session.account)
+            <<< networkRow()
 
-            +++ Section(R.string.localizable.settingsSecurityLabelTitle())
+            <<< walletsRow(for: account.address)
+
+            +++ Section(NSLocalizedString("settings.security.label.title", value: "Security", comment: ""))
 
             <<< SwitchRow(Values.passcodeRow) { [weak self] in
                 $0.title = self?.viewModel.passcodeTitle
@@ -110,7 +133,7 @@ final class SettingsViewController: FormViewController, Coordinator {
             })
             }.cellUpdate { cell, _ in
                 cell.imageView?.image = R.image.settings_colorful_notifications()
-                cell.textLabel?.text = R.string.localizable.settingsPushNotificationsTitle()
+                cell.textLabel?.text = NSLocalizedString("settings.pushNotifications.title", value: "Push Notifications", comment: "")
                 cell.accessoryType = .disclosureIndicator
             }
 
@@ -118,50 +141,80 @@ final class SettingsViewController: FormViewController, Coordinator {
 
             <<< currencyRow()
             <<< browserRow()
-            <<< privacyRow()
 
-            +++ Section(R.string.localizable.settingsJoinCommunityLabelTitle())
+            +++ Section(NSLocalizedString("settings.joinCommunity.label.title", value: "Join Community", comment: ""))
 
             <<< linkProvider(type: .twitter)
             <<< linkProvider(type: .telegram)
             <<< linkProvider(type: .facebook)
             <<< linkProvider(type: .discord)
 
-            +++ Section()
-            <<< linkProvider(type: .helpCenter)
+            +++ Section(NSLocalizedString("settings.support.label.title", value: "Support", comment: ""))
+
+            <<< AppFormAppearance.button { button in
+                button.title = NSLocalizedString("settings.shareWithFriends.button.title", value: "Share With Friends", comment: "")
+                button.cell.imageView?.image = R.image.settings_colorful_share()
+            }.onCellSelection { [unowned self] cell, _  in
+                self.helpUsCoordinator.presentSharing(in: self, from: cell.contentView)
+            }
 
             +++ Section()
-            <<< shareWithFriendsRow()
 
-            +++ Section()
             <<< aboutRow()
+            <<< supportRow()
 
             +++ Section()
-            <<< developersRow()
+
+            <<< TextRow {
+                $0.title = NSLocalizedString("settings.version.label.title", value: "Version", comment: "")
+                $0.value = Bundle.main.fullVersion
+                $0.disabled = true
+            }
     }
 
-    private func shareWithFriendsRow() -> ButtonRow {
-        return AppFormAppearance.button { button in
-            button.title = R.string.localizable.shareWithFriends()
-            button.cell.imageView?.image = R.image.settings_colorful_share()
-        }.onCellSelection { [unowned self] cell, _  in
-            self.helpUsCoordinator.presentSharing(in: self, from: cell.contentView)
+    private func networkRow() -> PushRow<RPCServer> {
+        return PushRow<RPCServer> { [weak self] in
+            guard let strongSelf = self else {
+                return
+            }
+            $0.title = strongSelf.viewModel.networkTitle
+            $0.options = strongSelf.viewModel.servers
+            $0.value = RPCServer(chainID: strongSelf.config.chainID)
+            $0.selectorTitle = strongSelf.viewModel.networkTitle
+            $0.displayValueFor = { value in
+                return value?.displayName
+            }
+        }.onChange { [weak self] row in
+            let server = row.value ?? RPCServer.main
+            self?.run(action: .RPCServer(server: server))
+        }.onPresent { _, selectorController in
+            selectorController.enableDeselection = false
+            selectorController.sectionKeyForValue = { option in
+                switch option {
+                case .main, .classic, .callisto, .poa: return ""
+                case .kovan, .ropsten, .rinkeby, .sokol: return NSLocalizedString("settings.network.test.label.title", value: "Test", comment: "")
+                case .custom:
+                    return NSLocalizedString("settings.network.custom.label.title", value: "Custom", comment: "")
+                }
+            }
+        }.cellSetup { cell, _ in
+            cell.imageView?.image = R.image.settings_colorful_networks()
         }
     }
 
-    private func walletsRow(for wallet: WalletInfo) -> ButtonRow {
-        let viewModel = WalletInfoViewModel(wallet: wallet)
-        return AppFormAppearance.button { row in
+    private func walletsRow(for address: Address) -> ButtonRow {
+        return AppFormAppearance.button { [weak self] row in
+            guard let strongSelf = self, let accountsViewController = strongSelf.accountsCoordinator?.accountsViewController else { return }
             row.cellStyle = .value1
+            row.presentationMode = .show(controllerProvider: ControllerProvider<UIViewController>.callback {
+                return accountsViewController
+            }, onDismiss: nil)
         }.cellUpdate { cell, _ in
             cell.textLabel?.textColor = .black
             cell.imageView?.image = R.image.settings_colorful_wallets()
-            cell.textLabel?.text = R.string.localizable.wallets()
-            cell.detailTextLabel?.text = String(viewModel.name.prefix(14))
+            cell.textLabel?.text = NSLocalizedString("settings.wallets.button.title", value: "Wallets", comment: "")
+            cell.detailTextLabel?.text = String(address.description.prefix(10)) + "..."
             cell.accessoryType = .disclosureIndicator
-        }.onCellSelection { [weak self] (_, _) in
-            guard let strongSelf = self else { return }
-            strongSelf.delegate?.didAction(action: .wallets, in: strongSelf)
         }
     }
 
@@ -190,14 +243,30 @@ final class SettingsViewController: FormViewController, Coordinator {
             selectorController.sectionHeaderTitleForKey = { option in
                 switch option {
                 case Values.currencyPopularKey:
-                    return R.string.localizable.settingsCurrencyPopularLabelTitle()
+                    return NSLocalizedString("settings.currency.popular.label.title", value: "Popular", comment: "")
                 case Values.currencyAllKey:
-                    return R.string.localizable.settingsCurrencyAllLabelTitle()
+                    return NSLocalizedString("settings.currency.all.label.title", value: "All", comment: "")
                 default: return ""
                 }
             }
         }.cellSetup { cell, _ in
             cell.imageView?.image = R.image.settings_colorful_currency()
+        }
+    }
+
+    private func supportRow() -> ButtonRow {
+        return AppFormAppearance.button { row in
+            row.cellStyle = .value1
+            row.presentationMode = .show(controllerProvider: ControllerProvider<UIViewController>.callback { [weak self] in
+                let controller = SupportViewController()
+                controller.delegate = self
+                return controller
+            }, onDismiss: { _ in })
+        }.cellUpdate { cell, _ in
+            cell.textLabel?.textColor = .black
+            cell.imageView?.image = R.image.settings_colorful_support()
+            cell.textLabel?.text = NSLocalizedString("settings.support.title", value: "Support", comment: "")
+            cell.accessoryType = .disclosureIndicator
         }
     }
 
@@ -212,7 +281,7 @@ final class SettingsViewController: FormViewController, Coordinator {
         }.cellUpdate { cell, _ in
             cell.textLabel?.textColor = .black
             cell.imageView?.image = R.image.settings_colorful_about()
-            cell.textLabel?.text = R.string.localizable.settingsAboutTitle()
+            cell.textLabel?.text = NSLocalizedString("settings.about.title", value: "About", comment: "")
             cell.accessoryType = .disclosureIndicator
         }
     }
@@ -228,35 +297,7 @@ final class SettingsViewController: FormViewController, Coordinator {
         }.cellUpdate { cell, _ in
             cell.textLabel?.textColor = .black
             cell.imageView?.image = R.image.settings_colorful_dappbrowser()
-            cell.textLabel?.text = R.string.localizable.settingsBrowserTitle()
-            cell.accessoryType = .disclosureIndicator
-        }
-    }
-
-    private func privacyRow() -> ButtonRow {
-        return AppFormAppearance.button { row in
-            row.cellStyle = .value1
-            row.presentationMode = .show(controllerProvider:ControllerProvider<UIViewController>.callback {
-                return PrivacyViewController()
-            }, onDismiss: nil)
-        }.cellUpdate { cell, _ in
-            cell.imageView?.image = R.image.settings_colorful_privacy()
-            cell.textLabel?.text = R.string.localizable.settingsPrivacyTitle()
-            cell.accessoryType = .disclosureIndicator
-        }
-    }
-
-    private func developersRow() -> ButtonRow {
-        return AppFormAppearance.button { row in
-            row.cellStyle = .value1
-            row.presentationMode = .show(controllerProvider:ControllerProvider<UIViewController>.callback {[weak self] in
-                let controller = DeveloperViewController()
-                controller.delegate = self
-                return controller
-            }, onDismiss: nil)
-        }.cellUpdate { cell, _ in
-            cell.imageView?.image = R.image.settings_colorful_developer()
-            cell.textLabel?.text = R.string.localizable.developer()
+            cell.textLabel?.text = NSLocalizedString("settings.browser.title", value: "DApp Browser", comment: "")
             cell.accessoryType = .disclosureIndicator
         }
     }
@@ -301,6 +342,13 @@ final class SettingsViewController: FormViewController, Coordinator {
         }
     }
 
+    private func chaineStateObservation() {
+        self.session.chainState.chainStateCompletion = { [weak self] (state, block) in
+            let condition = NetworkCondition.from(state, block)
+            self?.networkStateView?.viewModel = NetworkConditionViewModel(condition: condition)
+        }
+    }
+
     private func updateAutoLockRow(with type: AutoLock) {
         self.autoLockRow.value = type
         self.autoLockRow.reload()
@@ -327,6 +375,12 @@ extension SettingsViewController: LockCreatePasscodeCoordinatorDelegate {
     }
 }
 
+extension SettingsViewController: SupportViewControllerDelegate {
+    func didPressURL(_ url: URL, in controller: SupportViewController) {
+        openURLInBrowser(url)
+    }
+}
+
 extension SettingsViewController: AboutViewControllerDelegate {
     func didPressURL(_ url: URL, in controller: AboutViewController) {
         openURLInBrowser(url)
@@ -343,15 +397,5 @@ extension SettingsViewController: Scrollable {
     func scrollOnTop() {
         guard isViewLoaded else { return }
         tableView.scrollOnTop()
-    }
-}
-
-extension SettingsViewController: DeveloperViewControllerDelegate {
-    func didClearTransactions(in controller: DeveloperViewController) {
-        delegate?.didAction(action: .clearTransactions, in: self)
-    }
-
-    func didClearTokens(in controller: DeveloperViewController) {
-        delegate?.didAction(action: .clearTokens, in: self)
     }
 }

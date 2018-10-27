@@ -1,21 +1,17 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import RealmSwift
 import TrustCore
 import PromiseKit
 
-final class NonFungibleTokenViewModel {
+class NonFungibleTokenViewModel {
 
     let config: Config
     let storage: TokensDataStore
     var tokensNetwork: NetworkProtocol
-    let tokens: Results<CollectibleTokenCategory>
+    let tokens: Results<NonFungibleTokenCategory>
     var tokensObserver: NotificationToken?
     let address: Address
-
-    var title: String {
-        return R.string.localizable.collectibles()
-    }
 
     var headerBackgroundColor: UIColor {
         return UIColor(hex: "fafafa")
@@ -58,10 +54,10 @@ final class NonFungibleTokenViewModel {
         self.tokens = storage.nonFungibleTokens
     }
 
-    func fetchAssets() -> Promise<[CollectibleTokenCategory]> {
+    func fetchAssets() -> Promise<[NonFungibleTokenCategory]> {
         return Promise { seal in
             firstly {
-                tokensNetwork.collectibles()
+                tokensNetwork.assets()
             }.done { [weak self] tokens in
                 self?.storage.add(tokens: tokens)
                 seal.fulfill(tokens)
@@ -71,15 +67,15 @@ final class NonFungibleTokenViewModel {
         }
     }
 
-    func setTokenObservation(with block: @escaping (RealmCollectionChange<Results<CollectibleTokenCategory>>) -> Void) {
+    func setTokenObservation(with block: @escaping (RealmCollectionChange<Results<NonFungibleTokenCategory>>) -> Void) {
         tokensObserver = tokens.observe(block)
     }
 
-    func token(for path: IndexPath) -> CollectibleTokenObject {
+    func token(for path: IndexPath) -> NonFungibleTokenObject {
         return tokens[path.section].items[path.row]
     }
 
-    func tokens(for path: IndexPath) -> [CollectibleTokenObject] {
+    func tokens(for path: IndexPath) -> [NonFungibleTokenObject] {
         return Array(tokens[path.section].items)
     }
 

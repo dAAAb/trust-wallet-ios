@@ -1,9 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 
-final class TabBarController: UITabBarController {
+class TabBarController: UITabBarController {
 
     private var previousController: UIViewController?
 
@@ -24,7 +24,7 @@ extension TabBarController: UITabBarControllerDelegate {
         }
 
         if self.previousController == viewController {
-            if let nav = viewController as? UINavigationController,
+            if let nav = viewController as? NavigationController,
                 nav.viewControllers.count < 2,
                 let controller = nav.viewControllers.first as? Scrollable {
                 controller.scrollOnTop()

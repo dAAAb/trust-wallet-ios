@@ -1,16 +1,16 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 
-final class CheckDeviceCoordinator: Coordinator {
+class CheckDeviceCoordinator: Coordinator {
     var coordinators: [Coordinator] = []
 
     let navigationController: NavigationController
 
     let jailbreakChecker: JailbreakChecker
 
-    lazy var rootViewController: UIAlertController = {
+    lazy var alertViewController: UIAlertController = {
         let controller = UIAlertController(
             title: NSLocalizedString("app.device.jailbreak.title", value: "DEVICE SECURITY COMPROMISED", comment: ""),
             message: NSLocalizedString(
@@ -21,7 +21,8 @@ final class CheckDeviceCoordinator: Coordinator {
             preferredStyle: UIAlertControllerStyle.alert
         )
         controller.popoverPresentationController?.sourceView = navigationController.view
-        controller.addAction(UIAlertAction(title: R.string.localizable.oK(), style: .default))
+        controller.addAction(UIAlertAction(title: NSLocalizedString("OK", value: "OK", comment: ""), style: .default))
+
         return controller
     }()
 
@@ -35,7 +36,7 @@ final class CheckDeviceCoordinator: Coordinator {
 
     func start() {
         if jailbreakChecker.isJailbroken() {
-            navigationController.present(rootViewController, animated: true, completion: nil)
+            navigationController.present(alertViewController, animated: true, completion: nil)
         }
     }
 }

@@ -1,17 +1,15 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import BigInt
 import Foundation
 import UIKit
-import TrustKeystore
 
 struct TransactionCellViewModel {
 
     private let transaction: Transaction
     private let config: Config
     private let chainState: ChainState
-    private let currentAccount: Account
-    private let token: TokenObject
+    private let currentWallet: Wallet
     private let shortFormatter = EtherNumberFormatter.short
 
     private let transactionViewModel: TransactionViewModel
@@ -20,22 +18,22 @@ struct TransactionCellViewModel {
         transaction: Transaction,
         config: Config,
         chainState: ChainState,
-        currentAccount: Account,
-        server: RPCServer,
-        token: TokenObject
+        currentWallet: Wallet
     ) {
         self.transaction = transaction
         self.config = config
         self.chainState = chainState
-        self.currentAccount = currentAccount
+        self.currentWallet = currentWallet
         self.transactionViewModel = TransactionViewModel(
             transaction: transaction,
             config: config,
-            currentAccount: currentAccount,
-            server: server,
-            token: token
+            chainState: chainState,
+            currentWallet: currentWallet
         )
-        self.token = token
+    }
+
+    var confirmations: Int? {
+        return chainState.confirmations(fromBlock: transaction.blockNumber)
     }
 
     private var operationTitle: String? {
@@ -56,15 +54,9 @@ struct TransactionCellViewModel {
     }
 
     var title: String {
-        switch token.type {
-        case .coin:
-            return stateString
-        case .ERC20:
-            return operationTitle ?? stateString
+        if let operationTitle = operationTitle {
+            return operationTitle
         }
-    }
-
-    private var stateString: String {
         switch transaction.state {
         case .completed:
             switch transactionViewModel.direction {

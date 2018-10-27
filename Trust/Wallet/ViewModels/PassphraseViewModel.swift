@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
@@ -6,7 +6,8 @@ import UIKit
 struct PassphraseViewModel {
 
     var title: String {
-        return R.string.localizable.backupPhrase()
+        return NSLocalizedString("Recovery Phrase", value: "Recovery Phrase", comment: "")
+
     }
 
     var backgroundColor: UIColor {

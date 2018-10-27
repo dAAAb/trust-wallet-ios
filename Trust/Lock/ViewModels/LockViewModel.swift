@@ -1,12 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
 class LockViewModel {
-    private let lock: Lock
-    init(lock: Lock = Lock()) {
-        self.lock = lock
-    }
+    private let lock = Lock()
     func charCount() -> Int {
         //This step is required for old clients to support 4 digit passcode.
         var count = 0

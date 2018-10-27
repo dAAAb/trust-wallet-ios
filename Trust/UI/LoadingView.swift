@@ -1,10 +1,10 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 import StatefulViewController
 
-final class LoadingView: UIView {
+class LoadingView: UIView {
 
     let label = UILabel()
     let imageView = UIImageView()

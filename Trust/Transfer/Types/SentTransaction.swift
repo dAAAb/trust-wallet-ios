@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import TrustCore
@@ -10,11 +10,11 @@ struct SentTransaction {
 }
 
 extension SentTransaction {
-    static func from(transaction: SentTransaction) -> Transaction {
+    static func from(from: Address, transaction: SentTransaction) -> Transaction {
         return Transaction(
             id: transaction.id,
             blockNumber: 0,
-            from: transaction.original.account.address.description,
+            from: from.description,
             to: transaction.original.to?.description ?? "",
             value: transaction.original.value.description,
             gas: transaction.original.gasLimit.description,
@@ -22,7 +22,6 @@ extension SentTransaction {
             gasUsed: "",
             nonce: Int(transaction.original.nonce),
             date: Date(),
-            coin: transaction.original.account.coin!,
             localizedOperations: [transaction.original.localizedObject].compactMap { $0 },
             state: .pending
         )

@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 import SAMKeychain
@@ -9,7 +9,7 @@ protocol LockInterface {
     func shouldShowProtection() -> Bool
 }
 
-final class Lock: LockInterface {
+class Lock: LockInterface {
 
     private struct Keys {
         static let service = "trust.lock"
@@ -20,11 +20,7 @@ final class Lock: LockInterface {
     private let maxAttemptTime = "maxAttemptTime"
     private let autoLockType = "autoLockType"
     private let autoLockTime = "autoLockTime"
-    private let keychain: KeychainSwift
-
-    init(keychain: KeychainSwift = KeychainSwift(keyPrefix: Constants.keychainKeyPrefix)) {
-        self.keychain = keychain
-    }
+    private let keychain = KeychainSwift(keyPrefix: Constants.keychainKeyPrefix)
 
     func shouldShowProtection() -> Bool {
         return isPasscodeSet() && autoLockTriggered()
@@ -94,11 +90,10 @@ final class Lock: LockInterface {
         keychain.set(String(numberOfAttemptsSoFar), forKey: passcodeAttempts)
     }
 
-    func recordedMaxAttemptTime() -> Date? {
-        guard let timeString = keychain.get(maxAttemptTime) else {
-            return nil
-        }
-        return dateFormatter().date(from: timeString)
+    func recordedMaxAttemptTime() -> Date {
+        //This method is called only when we knew that maxAttemptTime is set. So no worries with !.
+        let timeString = keychain.get(maxAttemptTime)!
+        return dateFormatter().date(from: timeString)!
     }
 
     func incorrectMaxAttemptTimeIsSet() -> Bool {

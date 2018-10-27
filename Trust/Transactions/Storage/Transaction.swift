@@ -1,10 +1,10 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import RealmSwift
 import TrustCore
 
-final class Transaction: Object, Decodable {
+class Transaction: Object, Decodable {
     @objc dynamic var id: String = ""
     @objc dynamic var uniqueID: String = ""
     @objc dynamic var blockNumber: Int = 0
@@ -17,13 +17,6 @@ final class Transaction: Object, Decodable {
     @objc dynamic var nonce: Int = 0
     @objc dynamic var date = Date()
     @objc dynamic var internalState: Int = TransactionState.completed.rawValue
-
-    @objc private dynamic var rawCoin = -1
-    public var coin: Coin {
-        get { return Coin(rawValue: rawCoin)! }
-        set { rawCoin = newValue.rawValue }
-    }
-
     var localizedOperations = List<LocalizedOperationObject>()
 
     convenience init(
@@ -37,10 +30,10 @@ final class Transaction: Object, Decodable {
         gasUsed: String,
         nonce: Int,
         date: Date,
-        coin: Coin,
         localizedOperations: [LocalizedOperationObject],
         state: TransactionState
     ) {
+
         self.init()
         self.id = id
         self.uniqueID = from + "-" + String(nonce)
@@ -53,7 +46,6 @@ final class Transaction: Object, Decodable {
         self.gasUsed = gasUsed
         self.nonce = nonce
         self.date = date
-        self.coin = coin
         self.internalState = state.rawValue
 
         let list = List<LocalizedOperationObject>()
@@ -77,7 +69,6 @@ final class Transaction: Object, Decodable {
         case timeStamp // Convert from timestamp
         case operations // Operations needs custom decoding
         case error // Only to throw
-        case coin
     }
 
     convenience required init(from decoder: Decoder) throws {
@@ -88,7 +79,6 @@ final class Transaction: Object, Decodable {
         let to = try container.decode(String.self, forKey: .to)
         let value = try container.decode(String.self, forKey: .value)
         let gas = try container.decode(String.self, forKey: .gas)
-        let coin = try container.decode(Coin.self, forKey: .coin)
         let gasPrice = try container.decode(String.self, forKey: .gasPrice)
         let gasUsed = try container.decode(String.self, forKey: .gasUsed)
         let rawNonce = try container.decode(Int.self, forKey: .nonce)
@@ -97,7 +87,7 @@ final class Transaction: Object, Decodable {
         let operations = try container.decode([LocalizedOperationObject].self, forKey: .operations)
 
         guard
-            let fromAddress = EthereumAddress(string: from) else {
+            let fromAddress = Address(string: from) else {
                 let context = DecodingError.Context(codingPath: [TransactionCodingKeys.from],
                                                     debugDescription: "Address can't be decoded as a TrustKeystore.Address")
                 throw DecodingError.dataCorrupted(context)
@@ -110,21 +100,18 @@ final class Transaction: Object, Decodable {
             return .completed
         }()
 
-        self.init(
-            id: id,
-            blockNumber: blockNumber,
-            from: fromAddress.description,
-            to: to,
-            value: value,
-            gas: gas,
-            gasPrice: gasPrice,
-            gasUsed: gasUsed,
-            nonce: rawNonce,
-            date: Date(timeIntervalSince1970: TimeInterval(timeStamp) ?? 0),
-            coin: coin,
-            localizedOperations: operations,
-            state: state
-        )
+        self.init(id: id,
+                  blockNumber: blockNumber,
+                  from: fromAddress.description,
+                  to: to,
+                  value: value,
+                  gas: gas,
+                  gasPrice: gasPrice,
+                  gasUsed: gasUsed,
+                  nonce: rawNonce,
+                  date: Date(timeIntervalSince1970: TimeInterval(timeStamp) ?? 0),
+                  localizedOperations: operations,
+                  state: state)
     }
 
     override static func primaryKey() -> String? {
@@ -135,20 +122,20 @@ final class Transaction: Object, Decodable {
         return TransactionState(int: self.internalState)
     }
 
-    var toAddress: EthereumAddress? {
-        return EthereumAddress(string: to)
+    var toAddress: Address? {
+        return Address(string: to)
     }
 
-    var fromAddress: EthereumAddress? {
-        return EthereumAddress(string: from)
+    var fromAddress: Address? {
+        return Address(string: from)
     }
 
-    var contractAddress: EthereumAddress? {
+    var contractAddress: Address {
         guard
             let operation = operation,
             let contract = operation.contract,
-            let contractAddress = EthereumAddress(string: contract) else {
-                return .none
+            let contractAddress = Address(string: contract) else {
+            return TokensDataStore.etherToken().address
         }
         return contractAddress
     }

@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import XCTest
 @testable import Trust
@@ -8,10 +8,29 @@ import KeychainSwift
 
 class TypedMessageEncodingTests: XCTestCase {
 
+    var account: Account!
     let keystore = FakeEtherKeystore()
 
+    override func setUp() {
+        super.setUp()
+        let privateKeyResult = keystore.convertPrivateKeyToKeystoreFile(privateKey: "0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318", passphrase: TestKeyStore.password)
+        guard case let .success(keystoreString) = privateKeyResult else {
+            return XCTFail()
+        }
+
+        let result = keystore.importKeystore(
+            value: keystoreString.jsonString!,
+            password: TestKeyStore.password,
+            newPassword: TestKeyStore.password
+        )
+
+        guard case let .success(account) = result else {
+            return XCTFail()
+        }
+        self.account = account
+    }
+
     func testValue_none() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "string", name: "test test", value: .none)
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -21,7 +40,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testValues() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "string", name: "Message", value: .string(value: "Hi, Alice!"))
         let typedData2 = EthTypedData(type: "uint8", name: "value", value: .uint(value: 10))
         let signResult = keystore.signTypedMessage([typedData, typedData2], for: account)
@@ -32,7 +50,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_uint_Value_uint() {
-        let account = importAccount()
         // from https://beta.adex.network/
         let typedData = EthTypedData(type: "uint", name: "Auth token", value: .uint(value: 1498316044249108))
 
@@ -44,7 +61,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_uint_Value_string() {
-        let account = importAccount()
         // from https://beta.adex.network/
         let typedData = EthTypedData(type: "uint", name: "Auth token", value: .string(value: "1498316044249108"))
 
@@ -56,7 +72,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_bool_Value_bool() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "bool", name: "email valid", value: .bool(value: false))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -66,7 +81,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_address_Value_string() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "address", name: "my address", value: .address(value: "0x2c7536e3605d9c16a7a3d7b1898e529396a65c23"))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -76,7 +90,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_string_Value_string() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "string", name: "This is a message", value: .string(value: "hello bob"))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -86,7 +99,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_string_Value_emptyString() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "string", name: "empty string here!", value: .string(value: ""))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -96,7 +108,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_int_Value_int() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "int32", name: "how much?", value: .int(value: 1200))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -106,7 +117,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_int_Value_bigInt() {
-        let account = importAccount()
         // from https://like.co/
         let typedData = EthTypedData(type: "int256", name: "how much?", value: .string(value: "-57896044618658097711785492504343953926634992332820282019728792003956564819968"))
         let signResult = keystore.signTypedMessage([typedData], for: account)
@@ -117,7 +127,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_int_Value_bigUInt() {
-        let account = importAccount()
         // from https://like.co/
         let typedData = EthTypedData(type: "uint256", name: "how much?", value: .string(value: "6739986666787659948666753771754907668409286105635143120275902562304"))
         let signResult = keystore.signTypedMessage([typedData], for: account)
@@ -128,7 +137,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
     
     func testType_bytes_Value_hexString() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "bytes", name: "your address", value: .string(value: "0x2c7536e3605d9c16a7a3d7b1898e529396a65c23"))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -139,7 +147,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_bytes_Value_hexShortString() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "bytes", name: "short hex", value: .string(value: "0xdeadbeaf"))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -150,7 +157,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_bytes_Value_hexEmptyString() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "bytes", name: "empty hex", value: .string(value: "0x"))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -161,7 +167,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_bytes_Value_string() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "bytes", name: "+bytes in string", value: .string(value: "this is a raw string"))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -172,7 +177,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_bytes_Value_emptyString() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "bytes", name: "nothing here", value: .string(value: ""))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -183,7 +187,6 @@ class TypedMessageEncodingTests: XCTestCase {
     }
 
     func testType_bytes_Value_int() {
-        let account = importAccount()
         let typedData = EthTypedData(type: "bytes", name: "a number?", value: .uint(value: 1100))
         let signResult = keystore.signTypedMessage([typedData], for: account)
         guard case let .success(data) = signResult else {
@@ -191,14 +194,5 @@ class TypedMessageEncodingTests: XCTestCase {
         }
 
         XCTAssertEqual(data.hexEncoded, "0xd90e257771b64fbc4ecd963f27ea371eb6a656c1912afda8a9184a4b81130dd71487f525d1ecca0d6008530c1bfcf5afc0c2224670ae68080d264ec96468c9bb1c")
-    }
-
-    private func importAccount() -> Account {
-        let privateKey = PrivateKey(data: Data(hexString: "0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318")!)!
-        let result = keystore.importPrivateKey(privateKey: privateKey, password: TestKeyStore.password, coin: .ethereum)
-        guard case let .success(account1) = result else {
-            return .make()
-        }
-        return account1.currentAccount
     }
 }

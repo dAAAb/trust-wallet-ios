@@ -1,12 +1,12 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
-final class NonFungibleTokenCellViewModel {
+struct NonFungibleTokenCellViewModel {
 
-    private let tokens: [CollectibleTokenObject]
+    private let tokens: [NonFungibleTokenObject]
 
-    init(tokens: [CollectibleTokenObject]) {
+    init(tokens: [NonFungibleTokenObject]) {
         self.tokens = tokens
     }
 
@@ -22,7 +22,7 @@ final class NonFungibleTokenCellViewModel {
         return NonFungibleCollectionViewCellModel(token: tokens[index.row])
     }
 
-    func token(for index: IndexPath) -> CollectibleTokenObject {
+    func token(for index: IndexPath) -> NonFungibleTokenObject {
         return tokens[index.row]
     }
 }

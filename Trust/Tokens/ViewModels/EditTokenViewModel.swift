@@ -1,37 +1,34 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 import Moya
-import RealmSwift
 
-final class EditTokenViewModel {
+class EditTokenViewModel {
 
     let network: NetworkProtocol
     let storage: TokensDataStore
-
-    private var tokens: Results<TokenObject> {
-        return storage.realm.objects(TokenObject.self).sorted(byKeyPath: "order", ascending: true)
-    }
+    let config: Config
 
     var localSet = Set<TokenObject>()
 
-    init(
-        network: NetworkProtocol,
-        storage: TokensDataStore
+    init(network: NetworkProtocol,
+         storage: TokensDataStore,
+         config: Config
     ) {
         self.network = network
         self.storage = storage
+        self.config = config
 
-        self.localSet = Set(tokens)
+        self.localSet = Set(storage.objects)
     }
 
     var title: String {
-        return R.string.localizable.tokens()
+        return NSLocalizedString("Tokens", value: "Tokens", comment: "")
     }
 
     var searchPlaceholder: String {
-        return R.string.localizable.editTokensSearchBarPlaceholderTitle()
+        return NSLocalizedString("editTokens.searchBar.placeholder.title", value: "Search tokens", comment: "")
     }
 
     var numberOfSections: Int {
@@ -39,19 +36,15 @@ final class EditTokenViewModel {
     }
 
     func numberOfRowsInSection(_ section: Int) -> Int {
-        return tokens.count
+        return storage.objects.count
     }
 
     func token(for indexPath: IndexPath) -> (token: TokenObject, local: Bool) {
-        return (tokens[indexPath.row], true)
-    }
-
-    func canEdit(for path: IndexPath) -> Bool {
-        return tokens[path.row].isCustom
+        return (storage.objects[indexPath.row], true)
     }
 
     func searchNetwork(token: String, completion: (([TokenObject]) -> Void)?) {
-        network.search(query: token).done { [weak self] tokens in
+        network.search(token: token) { [weak self] (tokens) in
             var filterSet = Set<TokenObject>()
             if let localSet = self?.localSet {
                 filterSet = localSet
@@ -61,7 +54,7 @@ final class EditTokenViewModel {
                 $0.isDisabled = false
             }
             completion?(tokens.filter { !filterSet.contains($0) })
-        }.catch { _ in }
+        }
     }
 
     func searchLocal(token searchText: String?) -> [TokenObject] {

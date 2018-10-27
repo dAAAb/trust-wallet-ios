@@ -1,8 +1,8 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
-final class QRGenerator {
+class QRGenerator {
     static func generate(from string: String) -> UIImage? {
         let context = CIContext()
         let data = string.data(using: String.Encoding.ascii)

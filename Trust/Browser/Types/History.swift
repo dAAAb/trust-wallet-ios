@@ -1,9 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import RealmSwift
 
-final class History: Object {
+class History: Object {
     @objc dynamic var url: String = ""
     @objc dynamic var title: String = ""
     @objc dynamic var createdAt: Date = Date()

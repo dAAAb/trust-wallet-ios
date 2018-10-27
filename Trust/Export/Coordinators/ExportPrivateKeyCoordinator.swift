@@ -1,28 +1,51 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 import TrustKeystore
 
-final class ExportPrivateKeyCoordinator: RootCoordinator {
+protocol ExportPrivateKeyCoordinatorDelegate: class {
+    func didCancel(in coordinator: ExportPrivateKeyCoordinator)
+}
 
-    let privateKey: Data
+class ExportPrivateKeyCoordinator: Coordinator {
+
+    let navigationController: NavigationController
+    weak var delegate: ExportPrivateKeyCoordinatorDelegate?
+    let keystore: Keystore
+    let account: Account
     var coordinators: [Coordinator] = []
-    var rootViewController: UIViewController {
-        return exportViewController
-    }
     lazy var exportViewController: ExportPrivateKeyViewConroller = {
-        let controller = ExportPrivateKeyViewConroller(viewModel: viewModel)
-        controller.navigationItem.title = NSLocalizedString("export.privateKey.navigation.title", value: "Export Private Key", comment: "")
-        return controller
+        return self.makeExportViewController()
     }()
     private lazy var viewModel: ExportPrivateKeyViewModel = {
-        return .init(privateKey: privateKey)
+        return .init(keystore: keystore,
+                     account: account)
     }()
 
     init(
-        privateKey: Data
+        navigationController: NavigationController = NavigationController(),
+        keystore: Keystore,
+        account: Account
     ) {
-        self.privateKey = privateKey
+        self.navigationController = navigationController
+        self.navigationController.modalPresentationStyle = .formSheet
+        self.keystore = keystore
+        self.account = account
+    }
+
+    func start() {
+        navigationController.viewControllers = [exportViewController]
+    }
+
+    func makeExportViewController() -> ExportPrivateKeyViewConroller {
+        let controller = ExportPrivateKeyViewConroller(viewModel: viewModel)
+        controller.navigationItem.title = NSLocalizedString("export.privateKey.navigation.title", value: "Export Private Key", comment: "")
+        controller.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismiss))
+        return controller
+    }
+
+    @objc func dismiss() {
+        delegate?.didCancel(in: self)
     }
 }

@@ -1,10 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import BigInt
 import Foundation
 import UIKit
 import TrustCore
-import TrustKeystore
 
 struct TransactionDetailsViewModel {
 
@@ -23,48 +22,41 @@ struct TransactionDetailsViewModel {
     private let chainState: ChainState
     private let shortFormatter = EtherNumberFormatter.short
     private let fullFormatter = EtherNumberFormatter.full
-    private let session: WalletSession
-    private let server: RPCServer
-    private let token: TokenObject
+    private let currencyRate: CurrencyRate?
     private var monetaryAmountViewModel: MonetaryAmountViewModel {
         return MonetaryAmountViewModel(
             amount: transactionViewModel.shortValue.amount,
-            contract: token.address,
-            session: session
+            address: transaction.contractAddress,
+            currencyRate: currencyRate
         )
     }
     init(
         transaction: Transaction,
         config: Config,
         chainState: ChainState,
-        currentAccount: Account,
-        session: WalletSession,
-        server: RPCServer,
-        token: TokenObject
+        currentWallet: Wallet,
+        currencyRate: CurrencyRate?
     ) {
         self.transaction = transaction
         self.config = config
         self.chainState = chainState
-        self.session = session
+        self.currencyRate = currencyRate
         self.transactionViewModel = TransactionViewModel(
             transaction: transaction,
             config: config,
-            currentAccount: currentAccount,
-            server: server,
-            token: token
+            chainState: chainState,
+            currentWallet: currentWallet
         )
-        self.server = server
-        self.token = token
     }
 
     var title: String {
         if transaction.state == .pending {
-            return R.string.localizable.pendingTransaction()
+            return NSLocalizedString("Pending Transaction", value: "Pending Transaction", comment: "")
         }
         if transactionViewModel.direction == .incoming {
-            return R.string.localizable.incomingTransaction()
+            return NSLocalizedString("Incoming Transaction", value: "Incoming Transaction", comment: "")
         }
-        return R.string.localizable.outgoingTransaction()
+        return NSLocalizedString("Outgoing Transaction", value: "Outgoing Transaction", comment: "")
     }
 
     var backgroundColor: UIColor {
@@ -76,7 +68,7 @@ struct TransactionDetailsViewModel {
     }
 
     var createdAtLabelTitle: String {
-        return R.string.localizable.transactionTimeLabelTitle()
+        return NSLocalizedString("transaction.time.label.title", value: "Transaction Time", comment: "")
     }
 
     var detailsAvailable: Bool {
@@ -88,7 +80,7 @@ struct TransactionDetailsViewModel {
     }
 
     var detailsURL: URL? {
-        return ConfigExplorer(server: server).transactionURL(for: transaction.id)
+        return ConfigExplorer(server: config.server).transactionURL(for: transaction.id)
     }
 
     var transactionID: String {
@@ -96,32 +88,28 @@ struct TransactionDetailsViewModel {
     }
 
     var transactionIDLabelTitle: String {
-        return R.string.localizable.transactionIdLabelTitle()
+        return NSLocalizedString("transaction.id.label.title", value: "Transaction #", comment: "")
     }
 
     var address: String {
-        switch token.type {
-        case .coin:
-            if transactionViewModel.direction == .incoming {
-                return transaction.from
+        if transaction.toAddress == nil {
+            return Address.zero.description
+        }
+        if transactionViewModel.direction == .incoming {
+            return transaction.from
+        } else {
+            guard let to = transaction.operation?.to else {
+                return transaction.to
             }
-            return transaction.to
-        case .ERC20:
-            if transaction.toAddress == nil {
-                return EthereumAddress.zero.description
-            }
-            if transactionViewModel.direction == .incoming {
-                return transaction.from
-            }
-            return transaction.operation?.to ?? transaction.to
+            return to
         }
     }
 
     var addressTitle: String {
         if transactionViewModel.direction == .incoming {
-            return R.string.localizable.transactionSenderLabelTitle()
+            return NSLocalizedString("transaction.sender.label.title", value: "Sender", comment: "")
         } else {
-            return R.string.localizable.transactionSenderLabelTitle()
+            return NSLocalizedString("transaction.recipient.label.title", value: "Recipient", comment: "")
         }
     }
 
@@ -130,7 +118,7 @@ struct TransactionDetailsViewModel {
     }
 
     var nonceTitle: String {
-        return R.string.localizable.nonce()
+        return NSLocalizedString("Nonce", value: "Nonce", comment: "")
     }
 
     var gasViewModel: GasViewModel {
@@ -144,7 +132,7 @@ struct TransactionDetailsViewModel {
             }
         }()
 
-        return GasViewModel(fee: gasFee, server: server, store: session.tokensStorage, formatter: fullFormatter)
+        return GasViewModel(fee: gasFee, server: config.server, currencyRate: currencyRate, formatter: fullFormatter)
     }
 
     var gasFee: String {
@@ -153,7 +141,7 @@ struct TransactionDetailsViewModel {
     }
 
     var gasFeeLabelTitle: String {
-        return R.string.localizable.networkFee()
+        return NSLocalizedString("Network Fee", value: "Network Fee", comment: "")
     }
 
     var confirmation: String {

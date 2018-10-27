@@ -1,18 +1,18 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 
 struct ConfigureTransactionViewModel {
 
     let config: Config
-    let transfer: Transfer
+    let transferType: TransferType
 
     init(
         config: Config,
-        transfer: Transfer
+        transferType: TransferType
     ) {
         self.config = config
-        self.transfer = transfer
+        self.transferType = transferType
     }
 
     var title: String {
@@ -26,7 +26,7 @@ struct ConfigureTransactionViewModel {
                 value: "With a higher gas price, your transaction fee will be more expensive, but the %@ network will process your transaction faster.",
                 comment: ""
             ),
-            transfer.server.name
+            config.server.name
         )
     }
 
@@ -37,7 +37,7 @@ struct ConfigureTransactionViewModel {
                 value: "The gas limit prevents smart contracts from consuming all your %@. We will try to calculate the gas limit automatically for you, but some smart contracts may require a custom gas limit.",
                 comment: ""
             ),
-            transfer.server.name
+            config.server.name
         )
     }
 }

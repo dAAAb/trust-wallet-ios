@@ -1,9 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 
-final class TokensHeaderView: UIView {
+class TokensHeaderView: UIView {
 
     lazy var amountLabel: UILabel = {
         let label = UILabel(frame: .zero)

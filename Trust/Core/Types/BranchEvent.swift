@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import TrustCore
@@ -25,7 +25,7 @@ enum BranchEvent {
             ]
         case .newToken(let address):
             return [
-                "contract": address.description,
+                "contract": address.eip55String,
                 "event": BranchEventName.newToken.rawValue,
             ]
         }
@@ -38,7 +38,7 @@ extension BranchEvent: Equatable {
         case (let .openURL(lhs), let .openURL(rhs)):
             return lhs == rhs
         case (let .newToken(lhs), let .newToken(rhs)):
-            return lhs.description == rhs.description
+            return lhs == rhs
         case (_, .openURL),
              (_, .newToken):
             return false

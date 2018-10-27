@@ -1,10 +1,10 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 import Eureka
 import Result
 
-final class AddCustomNetworkViewController: FormViewController {
+class AddCustomNetworkViewController: FormViewController {
 
     let viewModel = AddCustomNetworkViewModel()
 
@@ -41,7 +41,7 @@ final class AddCustomNetworkViewController: FormViewController {
             <<< AppFormAppearance.textFieldFloat(tag: Values.chainID) {
                 $0.add(rule: EthereumAddressRule())
                 $0.validationOptions = .validatesOnDemand
-                $0.title = R.string.localizable.chainID()
+                $0.title = NSLocalizedString("Chain ID", value: "Chain ID", comment: "")
             }.cellUpdate { cell, _ in
                 cell.textField.keyboardType = .decimalPad
             }
@@ -49,19 +49,19 @@ final class AddCustomNetworkViewController: FormViewController {
             <<< AppFormAppearance.textFieldFloat(tag: Values.name) {
                 $0.add(rule: RuleRequired())
                 $0.validationOptions = .validatesOnDemand
-                $0.title = R.string.localizable.name()
+                $0.title = NSLocalizedString("Name", value: "Name", comment: "")
             }
 
             <<< AppFormAppearance.textFieldFloat(tag: Values.symbol) {
                 $0.add(rule: RuleRequired())
                 $0.validationOptions = .validatesOnDemand
-                $0.title = R.string.localizable.symbol()
+                $0.title = NSLocalizedString("Symbol", value: "Symbol", comment: "")
             }
 
             <<< AppFormAppearance.textFieldFloat(tag: Values.endpoint) {
                 $0.add(rule: RuleRequired())
                 $0.validationOptions = .validatesOnDemand
-                $0.title = R.string.localizable.endpoint()
+                $0.title = NSLocalizedString("Endpoint", value: "Endpoint", comment: "")
             }
     }
 

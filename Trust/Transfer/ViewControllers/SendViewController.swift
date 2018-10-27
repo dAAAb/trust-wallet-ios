@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
@@ -13,26 +13,24 @@ import TrustKeystore
 protocol SendViewControllerDelegate: class {
     func didPressConfirm(
         transaction: UnconfirmedTransaction,
-        transfer: Transfer,
+        transferType: TransferType,
         in viewController: SendViewController
     )
 }
-
 class SendViewController: FormViewController {
     private lazy var viewModel: SendViewModel = {
-        let balance = Balance(value: transfer.type.token.valueBigInt)
-        return .init(transfer: transfer, config: session.config, chainState: chainState, storage: storage, balance: balance)
+        return .init(transferType: transferType, config: session.config, chainState: session.chainState, storage: storage, balance: session.balance)
     }()
     weak var delegate: SendViewControllerDelegate?
     struct Values {
         static let address = "address"
         static let amount = "amount"
+        static let collectible = "collectible"
     }
     let session: WalletSession
     let account: Account
-    let transfer: Transfer
+    let transferType: TransferType
     let storage: TokensDataStore
-    let chainState: ChainState
     var addressRow: TextFloatLabelRow? {
         return form.rowBy(tag: Values.address) as? TextFloatLabelRow
     }
@@ -55,24 +53,15 @@ class SendViewController: FormViewController {
         session: WalletSession,
         storage: TokensDataStore,
         account: Account,
-        transfer: Transfer,
-        chainState: ChainState
+        transferType: TransferType = .ether(destination: .none)
     ) {
         self.session = session
         self.account = account
-        self.transfer = transfer
+        self.transferType = transferType
         self.storage = storage
-        self.chainState = chainState
         super.init(nibName: nil, bundle: nil)
         title = viewModel.title
         view.backgroundColor = viewModel.backgroundColor
-
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: R.string.localizable.next(),
-            style: .done,
-            target: self,
-            action: #selector(send)
-        )
 
         let section = Section(header: "", footer: viewModel.isFiatViewHidden() ? "" : viewModel.pairRateRepresantetion())
         fields().forEach { cell in
@@ -97,15 +86,16 @@ class SendViewController: FormViewController {
             return addressField()
         case .amount:
             return amountField()
+        case .collectible(let token):
+            return collectibleField(with: token)
         }
     }
 
     func addressField() -> TextFloatLabelRow {
-        let recipientRightView = AddressFieldView()
-        recipientRightView.translatesAutoresizingMaskIntoConstraints = false
-        recipientRightView.pasteButton.addTarget(self, action: #selector(pasteAction), for: .touchUpInside)
-        recipientRightView.qrButton.addTarget(self, action: #selector(openReader), for: .touchUpInside)
-
+        let recipientRightView = FieldAppereance.addressFieldRightView(
+            pasteAction: { [unowned self] in self.pasteAction() },
+            qrAction: { [unowned self] in self.openReader() }
+        )
         return AppFormAppearance.textFieldFloat(tag: Values.address) {
             $0.add(rule: EthereumAddressRule())
             $0.validationOptions = .validatesOnDemand
@@ -146,6 +136,19 @@ class SendViewController: FormViewController {
         }
     }
 
+    func collectibleField(with token: NonFungibleTokenObject) -> SendNFTRow {
+        let cell = SendNFTRow(tag: Values.collectible)
+        let viewModel = NFTDetailsViewModel(token: token)
+        cell.cellSetup { cell, _ in
+            cell.tokenImage.kf.setImage(
+                with: viewModel.imageURL,
+                placeholder: viewModel.placeholder
+            )
+            cell.label.text = viewModel.title
+        }
+        return cell
+    }
+
     func clear() {
         let fields = [addressRow, amountRow]
         for field in fields {
@@ -153,18 +156,17 @@ class SendViewController: FormViewController {
             field?.reload()
         }
     }
-
     @objc func send() {
         let errors = form.validate()
         guard errors.isEmpty else { return }
         let addressString = addressRow?.value?.trimmed ?? ""
         let amountString = viewModel.amount
-        guard let address = EthereumAddress(string: addressString) else {
+        guard let address = Address(string: addressString) else {
             return displayError(error: Errors.invalidAddress)
         }
         let parsedValue: BigInt? = {
-            switch transfer.type {
-            case .ether, .dapp:
+            switch transferType {
+            case .ether, .dapp, .nft:
                 return EtherNumberFormatter.full.number(from: amountString, units: .ether)
             case .token(let token):
                 return EtherNumberFormatter.full.number(from: amountString, decimals: token.decimals)
@@ -174,7 +176,7 @@ class SendViewController: FormViewController {
             return displayError(error: SendInputErrors.wrongInput)
         }
         let transaction = UnconfirmedTransaction(
-            transfer: transfer,
+            transferType: transferType,
             value: value,
             to: address,
             data: data,
@@ -182,7 +184,7 @@ class SendViewController: FormViewController {
             gasPrice: viewModel.gasPrice,
             nonce: .none
         )
-        self.delegate?.didPressConfirm(transaction: transaction, transfer: transfer, in: self)
+        self.delegate?.didPressConfirm(transaction: transaction, transferType: transferType, in: self)
     }
     @objc func openReader() {
         let controller = QRCodeReaderViewController()
@@ -268,14 +270,12 @@ extension SendViewController: QRCodeReaderDelegate {
         }
 
         if let value = result.params["amount"] {
-            amountRow?.value = value
-            let amount = viewModel.decimalAmount(with: value)
-            viewModel.updatePairPrice(with: amount)
+            amountRow?.value = EtherNumberFormatter.full.string(from: BigInt(value) ?? BigInt(), units: .ether)
         } else {
             amountRow?.value = ""
-            viewModel.pairRate = 0.0
         }
         amountRow?.reload()
+        viewModel.pairRate = 0.0
         updatePriceSection()
     }
 }

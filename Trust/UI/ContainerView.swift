@@ -1,9 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 
-final class ContainerView: UIView {
+class ContainerView: UIView {
 
     public init(innerView: UIView, layoutMargins: UIEdgeInsets) {
 

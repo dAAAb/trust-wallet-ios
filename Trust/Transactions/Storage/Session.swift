@@ -1,48 +1,55 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import TrustCore
-import RealmSwift
 
-final class WalletSession {
-    let account: WalletInfo
+enum RefreshType {
+    case balance
+    case ethBalance
+}
+
+class WalletSession {
+    let account: Wallet
+    let balanceCoordinator: BalanceCoordinator
     let config: Config
-    let realm: Realm
-    let sharedRealm: Realm
-
-    var sessionID: String {
-        return "\(account.description))"
+    let chainState: ChainState
+    var balance: Balance? {
+        return balanceCoordinator.balance
     }
 
-    lazy var walletStorage: WalletStorage = {
-        return WalletStorage(realm: sharedRealm)
-    }()
-    lazy var tokensStorage: TokensDataStore = {
-        return TokensDataStore(realm: realm, account: account)
-    }()
-    lazy var transactionsStorage: TransactionsStorage = {
-        return TransactionsStorage(
-            realm: realm,
-            account: account
-        )
-    }()
+    var sessionID: String {
+        return "\(account.address.description.lowercased())-\(config.chainID)"
+    }
 
-    lazy var currentRPC: RPCServer = {
-        if account.multiWallet {
-            return .main
-        }
-        return account.coin!.server
-    }()
+    var balanceViewModel: Subscribable<BalanceBaseViewModel> = Subscribable(nil)
+    var nonceProvider: NonceProvider
 
     init(
-        account: WalletInfo,
-        realm: Realm,
-        sharedRealm: Realm,
-        config: Config
+        account: Wallet,
+        config: Config,
+        balanceCoordinator: BalanceCoordinator,
+        nonceProvider: NonceProvider
     ) {
         self.account = account
-        self.realm = realm
-        self.sharedRealm = sharedRealm
         self.config = config
+        self.chainState = ChainState(config: config)
+        self.nonceProvider = nonceProvider
+        self.balanceCoordinator = balanceCoordinator
+        self.balanceCoordinator.delegate = self
+        self.chainState.start()
+    }
+
+    func refresh() {
+        balanceCoordinator.refresh()
+    }
+
+    func stop() {
+        chainState.stop()
+    }
+}
+
+extension WalletSession: BalanceCoordinatorDelegate {
+    func didUpdate(viewModel: BalanceViewModel) {
+        balanceViewModel.value = viewModel
     }
 }

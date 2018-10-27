@@ -1,8 +1,8 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
-final class WordCollectionViewCell: UICollectionViewCell {
+class WordCollectionViewCell: UICollectionViewCell {
 
     @IBOutlet weak var wordLabel: UILabel!
 
@@ -10,7 +10,7 @@ final class WordCollectionViewCell: UICollectionViewCell {
         super.awakeFromNib()
         // Initialization code
 
-        layer.borderColor = UIColor(hex: "C6C6C6").cgColor
+        layer.borderColor = Colors.lightGray.cgColor
         layer.borderWidth = 0.5
         layer.cornerRadius = 4
     }

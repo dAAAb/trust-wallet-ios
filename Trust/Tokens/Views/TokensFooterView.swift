@@ -1,8 +1,8 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
-final class TokensFooterView: UIView {
+class TokensFooterView: UIView {
 
     lazy var textLabel: UILabel = {
         let label = UILabel(frame: .zero)

@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
@@ -97,7 +97,7 @@ class RequestViewController: UIViewController {
         // EIP67 format not being used much yet, use hex value for now
         // let string = "ethereum:\(account.address.address)?value=\(value)"
 
-        DispatchQueue.global(qos: .userInteractive).async {
+        DispatchQueue.global(qos: .background).async {
             let image = QRGenerator.generate(from: string)
             DispatchQueue.main.async {
                 self.imageView.image = image

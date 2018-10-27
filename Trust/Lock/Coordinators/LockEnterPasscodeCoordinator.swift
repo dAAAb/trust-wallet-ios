@@ -1,8 +1,8 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 
-final class LockEnterPasscodeCoordinator: Coordinator {
+class LockEnterPasscodeCoordinator: Coordinator {
     var coordinators: [Coordinator] = []
     let window: UIWindow = UIWindow()
     private let model: LockEnterPasscodeViewModel
@@ -34,6 +34,8 @@ final class LockEnterPasscodeCoordinator: Coordinator {
             return
         }
 
+        lockEnterPasscodeViewController.showKeyboard()
+        lockEnterPasscodeViewController.showBioMerickAuth()
         lockEnterPasscodeViewController.cleanUserInput()
     }
 

@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import UIKit
 import StatefulViewController
@@ -7,7 +7,7 @@ protocol HistoryViewControllerDelegate: class {
     func didSelect(history: History, in controller: HistoryViewController)
 }
 
-final class HistoryViewController: UIViewController {
+class HistoryViewController: UIViewController {
 
     let store: HistoryStore
     let tableView = UITableView(frame: .zero, style: .plain)
@@ -99,7 +99,7 @@ extension HistoryViewController: UITableViewDelegate {
             let history = viewModel.item(for: indexPath)
             confirm(
                 title: NSLocalizedString("Are you sure you would like to delete?", value: "Are you sure you would like to delete?", comment: ""),
-                okTitle: R.string.localizable.delete(),
+                okTitle: NSLocalizedString("Delete", value: "Delete", comment: ""),
                 okStyle: .destructive
             ) { [weak self] result in
                     switch result {

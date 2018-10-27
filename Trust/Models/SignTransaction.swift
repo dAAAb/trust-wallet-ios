@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import BigInt
@@ -8,7 +8,7 @@ import TrustKeystore
 public struct SignTransaction {
     let value: BigInt
     let account: Account
-    let to: EthereumAddress?
+    let to: Address?
     let nonce: BigInt
     let data: Data
     let gasPrice: BigInt

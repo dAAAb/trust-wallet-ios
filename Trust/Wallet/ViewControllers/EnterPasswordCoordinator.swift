@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import TrustKeystore
@@ -8,7 +8,7 @@ protocol EnterPasswordCoordinatorDelegate: class {
     func didCancel(in coordinator: EnterPasswordCoordinator)
 }
 
-final class EnterPasswordCoordinator: Coordinator {
+class EnterPasswordCoordinator: Coordinator {
     var coordinators: [Coordinator] = []
 
     weak var delegate: EnterPasswordCoordinatorDelegate?

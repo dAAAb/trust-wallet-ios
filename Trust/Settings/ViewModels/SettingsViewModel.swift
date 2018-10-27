@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 
@@ -18,7 +18,10 @@ struct SettingsViewModel {
             RPCServer.classic,
             RPCServer.poa,
             RPCServer.callisto,
-            RPCServer.gochain,
+            RPCServer.kovan,
+            RPCServer.ropsten,
+            RPCServer.rinkeby,
+            RPCServer.sokol,
         ]
     }
 

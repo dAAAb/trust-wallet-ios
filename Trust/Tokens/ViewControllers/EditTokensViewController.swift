@@ -1,15 +1,9 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 import UIKit
 
-protocol EditTokensViewControllerDelegate: class {
-    func didDelete(token: TokenObject, in controller: EditTokensViewController)
-    func didEdit(token: TokenObject, in controller: EditTokensViewController)
-    func didDisable(token: TokenObject, in controller: EditTokensViewController)
-}
-
-final class EditTokensViewController: UITableViewController {
+class EditTokensViewController: UITableViewController {
 
     let session: WalletSession
     let storage: TokensDataStore
@@ -18,10 +12,10 @@ final class EditTokensViewController: UITableViewController {
     lazy var viewModel: EditTokenViewModel = {
         return EditTokenViewModel(
             network: network,
-            storage: storage
+            storage: storage,
+            config: session.config
         )
     }()
-    weak var delegate: EditTokensViewControllerDelegate?
 
     lazy var searchController: UISearchController = {
         let searchController = UISearchController(searchResultsController: self.searchResultsController)
@@ -74,14 +68,10 @@ final class EditTokensViewController: UITableViewController {
         return .lightContent
     }
 
-    func fetch() {
-        tableView.reloadData()
-    }
-
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        fetch()
+        tableView.reloadData()
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -109,6 +99,7 @@ final class EditTokensViewController: UITableViewController {
         tableView.tableHeaderView = searchController.searchBar
         tableView.separatorStyle = .singleLine
         tableView.separatorColor = StyleLayout.TableView.separatorColor
+        tableView.separatorInset = TokensLayout.tableView.layoutInsets
         tableView.backgroundColor = .white
         tableView.cellLayoutMarginsFollowReadableWidth = false
         tableView.rowHeight = UITableViewAutomaticDimension
@@ -118,10 +109,12 @@ final class EditTokensViewController: UITableViewController {
 
     private func configCell(_ cell: EditTokenTableViewCell, token: (token: TokenObject, local: Bool)) {
         cell.viewModel = EditTokenTableCellViewModel(
-            viewModel: TokenObjectViewModel(token: token.token),
-            coinTicker: storage.coinTicker(by: token.token.address),
+            token: token.token,
+            coinTicker: storage.coinTicker(for: token.token),
+            config: session.config,
             isLocal: token.local
         )
+        cell.separatorInset = TokensLayout.tableView.layoutInsets
         cell.selectionStyle = token.local ? .none : .default
     }
 
@@ -130,21 +123,6 @@ final class EditTokensViewController: UITableViewController {
         searchResultsController.localResults = localResults
         viewModel.searchNetwork(token: token) { [weak self] (tokens) in
             self?.searchResultsController.remoteResults = tokens
-        }
-    }
-
-    override func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
-        let token = viewModel.token(for: indexPath)
-        let delete = UITableViewRowAction(style: .destructive, title: R.string.localizable.delete()) { [unowned self] (_, _) in
-            self.delegate?.didDelete(token: token.token, in: self)
-        }
-        let edit = UITableViewRowAction(style: .normal, title: R.string.localizable.edit()) { [unowned self] (_, _) in
-            self.delegate?.didEdit(token: token.token, in: self)
-        }
-        if viewModel.canEdit(for: indexPath) {
-            return [delete, edit]
-        } else {
-            return []
         }
     }
 }

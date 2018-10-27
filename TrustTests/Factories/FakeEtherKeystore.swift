@@ -1,4 +1,4 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 @testable import Trust
@@ -12,12 +12,11 @@ class FakeEtherKeystore: EtherKeystore {
         self.init(
             keychain: KeychainSwift(keyPrefix: "fake" + uniqueString),
             keysSubfolder: "/keys" + uniqueString,
-            userDefaults: UserDefaults.test,
-            storage: FakeWalletStorage()
+            userDefaults: UserDefaults.test
         )
     }
 
-    override func createAccount(with password: String, completion: @escaping (Result<Wallet, KeystoreError>) -> Void) {
+    override func createAccount(with password: String, completion: @escaping (Result<Account, KeystoreError>) -> Void) {
         completion(.success(.make()))
     }
 }

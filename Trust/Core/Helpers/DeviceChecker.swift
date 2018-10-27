@@ -1,8 +1,8 @@
-// Copyright DApps Platform Inc. All rights reserved.
+// Copyright SIX DAY LLC. All rights reserved.
 
 import Foundation
 
-final class DeviceChecker: JailbreakChecker {
+class DeviceChecker: JailbreakChecker {
     func isJailbroken() -> Bool {
         if TARGET_IPHONE_SIMULATOR == 1 {
             return false
